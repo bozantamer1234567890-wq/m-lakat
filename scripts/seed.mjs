@@ -1,6 +1,11 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.join(__dirname, "..", ".env.local") });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

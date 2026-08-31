@@ -13,7 +13,7 @@ export default async function SignupPage({
       <Card>
         <h1 className="mb-1 text-xl font-semibold text-brand-900">Ücretsiz başla</h1>
         <p className="mb-6 text-sm text-brand-600">
-          Birkaç dakikada ilk case interview'ini deneyimle.
+          Birkaç dakikada ilk case interview&apos;ini deneyimle.
         </p>
 
         {error && (

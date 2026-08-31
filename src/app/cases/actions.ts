@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { FREE_SESSION_LIMIT } from "@/lib/stripe";
 
 export async function startSession(formData: FormData) {
   const caseId = String(formData.get("case_id"));
@@ -12,6 +13,18 @@ export async function startSession(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+
+  if (profile?.plan !== "pro") {
+    const { count } = await supabase
+      .from("sessions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= FREE_SESSION_LIMIT) {
+      redirect("/pricing");
+    }
+  }
 
   const { data, error } = await supabase
     .from("sessions")

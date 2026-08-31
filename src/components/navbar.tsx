@@ -13,7 +13,7 @@ export async function Navbar() {
     <header className="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-10">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="text-lg font-semibold text-brand-800">
-          Mülakat<span className="text-brand-500">AI</span>
+          Prova
         </Link>
         <nav className="flex items-center gap-2 text-sm">
           {user ? (
@@ -22,7 +22,10 @@ export async function Navbar() {
                 Panel
               </Link>
               <Link href="/cases" className="px-3 py-2 text-brand-700 hover:text-brand-900">
-                Case'ler
+                Case&apos;ler
+              </Link>
+              <Link href="/pricing" className="px-3 py-2 text-brand-700 hover:text-brand-900">
+                Fiyatlandırma
               </Link>
               <form action={signOut}>
                 <button className="px-3 py-2 text-brand-700 hover:text-brand-900">
@@ -32,6 +35,9 @@ export async function Navbar() {
             </>
           ) : (
             <>
+              <Link href="/pricing" className="px-3 py-2 text-brand-700 hover:text-brand-900">
+                Fiyatlandırma
+              </Link>
               <LinkButton href="/login" variant="ghost">
                 Giriş yap
               </LinkButton>

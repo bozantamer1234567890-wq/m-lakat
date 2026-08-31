@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MülakatAI — Case Interview Pratiği",
+  title: "Prova — Case Interview Pratiği",
   description: "Sesli ve yazılı AI ile gerçekçi case interview pratiği yapın.",
 };
 
