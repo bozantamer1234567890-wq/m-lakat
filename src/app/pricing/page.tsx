@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, Badge, Button } from "@/components/ui";
-import { startCheckout, openBillingPortal } from "@/app/pricing/actions";
-import { FREE_SESSION_LIMIT } from "@/lib/stripe";
+import { Card, Badge, LinkButton } from "@/components/ui";
+import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
 
 export default async function PricingPage() {
   const supabase = await createClient();
@@ -9,10 +8,16 @@ export default async function PricingPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let plan: "free" | "pro" | null = null;
+  let proActive = false;
+  let currentPeriodEnd: string | null = null;
   if (user) {
-    const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
-    plan = (profile?.plan as "free" | "pro") ?? "free";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan, current_period_end")
+      .eq("id", user.id)
+      .single();
+    proActive = isProActive(profile);
+    currentPeriodEnd = profile?.current_period_end ?? null;
   }
 
   return (
@@ -46,21 +51,23 @@ export default async function PricingPage() {
             <li>Sınırsız mülakat oturumu</li>
             <li>Tüm case kütüphanesi</li>
             <li>Detaylı geri bildirim ve ilerleme takibi</li>
-            <li>İstediğin zaman iptal</li>
+            <li>iyzico ile güvenli ödeme</li>
           </ul>
 
-          {plan === "pro" ? (
-            <form action={openBillingPortal} className="mt-6">
-              <Button type="submit" className="w-full">
-                Aboneliği yönet
-              </Button>
-            </form>
+          {proActive ? (
+            <div className="mt-6">
+              <p className="text-center text-sm text-brand-700">
+                Aboneliğin {currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : ""} tarihine
+                kadar aktif.
+              </p>
+              <LinkButton href="/checkout" variant="secondary" className="mt-3 w-full">
+                Erken yenile
+              </LinkButton>
+            </div>
           ) : (
-            <form action={startCheckout} className="mt-6">
-              <Button type="submit" className="w-full">
-                {user ? "Pro'ya geç" : "Giriş yap ve devam et"}
-              </Button>
-            </form>
+            <LinkButton href={user ? "/checkout" : "/login"} className="mt-6 w-full">
+              {user ? "Pro'ya geç" : "Giriş yap ve devam et"}
+            </LinkButton>
           )}
         </Card>
       </div>

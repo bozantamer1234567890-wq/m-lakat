@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { FREE_SESSION_LIMIT } from "@/lib/stripe";
+import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
 
 export async function startSession(formData: FormData) {
   const caseId = String(formData.get("case_id"));
@@ -14,9 +14,13 @@ export async function startSession(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, current_period_end")
+    .eq("id", user.id)
+    .single();
 
-  if (profile?.plan !== "pro") {
+  if (!isProActive(profile)) {
     const { count } = await supabase
       .from("sessions")
       .select("*", { count: "exact", head: true })

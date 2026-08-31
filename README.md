@@ -11,14 +11,14 @@ Danışmanlık (McKinsey/BCG/Bain tarzı) case interview pratiği için sesli + 
 - Oturum sonunda otomatik puanlama ve geri bildirim raporu
 - İlerleme takibi içeren panel (dashboard)
 - Önceden doldurulmuş bir demo hesap
-- SaaS abonelik modeli: ücretsiz deneme + Stripe ile Pro plan
+- SaaS abonelik modeli: ücretsiz deneme + iyzico ile Pro plan (Türkiye'de çalışır)
 
 ## Teknoloji
 
 - **Frontend/Backend:** Next.js 16 (App Router), Tailwind CSS 4
 - **Veritabanı & Auth:** Supabase (Postgres + Row Level Security)
 - **AI:** OpenAI (`gpt-4o-mini` sohbet, `whisper-1` konuşma→metin, `tts-1` metin→konuşma)
-- **Ödeme:** Stripe (abonelik/Checkout/Billing Portal)
+- **Ödeme:** iyzico (Subscription Checkout Form)
 - **Deploy:** Vercel
 
 ## Yerel kurulum
@@ -53,17 +53,26 @@ Danışmanlık (McKinsey/BCG/Bain tarzı) case interview pratiği için sesli + 
 
 `supabase/migrations/` altında tanımlı:
 
-- `profiles` — kullanıcı profili + abonelik durumu (`plan`, `stripe_customer_id`); auth.users tetikleyicisiyle otomatik oluşur
+- `profiles` — kullanıcı profili + abonelik durumu (`plan`, `current_period_end`); auth.users tetikleyicisiyle otomatik oluşur
 - `cases` — case interview senaryoları
 - `sessions` — bir kullanıcının bir case üzerindeki mülakat oturumu
 - `messages` — oturum transkripti
 - `feedback` — oturum sonu AI değerlendirmesi
+- `payments` — iyzico ödeme geçmişi (denetim amaçlı)
 
 Tüm tablolarda Row Level Security aktif; kullanıcılar yalnızca kendi verilerini görebilir/değiştirebilir. `npm run db:migrate` tekrar çalıştırıldığında sadece henüz uygulanmamış migration dosyalarını uygular (`public._migrations` tablosunda takip edilir).
 
-## Stripe kurulumu
+## iyzico kurulumu
 
-1. [Stripe Dashboard](https://dashboard.stripe.com) → Product catalog'da "Pro" adında aylık bir fiyat (price) oluştur, Price ID'sini `STRIPE_PRO_PRICE_ID`'ye yaz.
-2. Developers → API keys'ten `STRIPE_SECRET_KEY`'i al.
-3. Yerelde test etmek için `stripe listen --forward-to localhost:3000/api/stripe/webhook` çalıştır, verdiği webhook secret'ı `STRIPE_WEBHOOK_SECRET`'a yaz. Prod'da Dashboard → Webhooks'tan `https://<site>/api/stripe/webhook` endpoint'i ekleyip oradaki secret'ı kullan.
-4. Ücretsiz plan `FREE_SESSION_LIMIT` (varsayılan 2, `src/lib/stripe.ts`) kadar oturuma izin verir; sonrasında `/pricing`'e yönlendirilir.
+Stripe Türkiye merkezli işletmeleri desteklemediği için ödeme altyapısı olarak **iyzico** kullanılıyor (Subscription Checkout Form API).
+
+1. [iyzico Merchant Panel](https://merchant.iyzipay.com) üzerinden bir hesap aç (sandbox test hesabı da mevcut: https://sandbox-merchant.iyzipay.com).
+2. Ayarlar → API anahtarları'ndan `IYZICO_API_KEY` ve `IYZICO_SECRET_KEY`'i al, `.env.local`'a yaz (sandbox test için `IYZICO_URI=https://sandbox-api.iyzipay.com`, canlıda `https://api.iyzipay.com`).
+3. Pro plan ürününü/fiyatını bir kere oluşturmak için:
+   ```bash
+   npm run iyzico:setup
+   ```
+   Script sonunda verdiği `IYZICO_PRICING_PLAN_REFERENCE_CODE` değerini `.env.local`'a ekle.
+4. Ücretsiz plan `FREE_SESSION_LIMIT` (varsayılan 2, `src/lib/iyzico.ts`) kadar oturuma izin verir; sonrasında `/pricing` → `/checkout`'a yönlendirilir.
+5. Ödeme akışı: `/checkout` sayfasında kullanıcı fatura bilgilerini (TC kimlik no, adres vb. — iyzico'nun zorunlu tuttuğu alanlar) girer → iyzico'nun güvenli checkout formu sayfada açılır → ödeme tamamlanınca iyzico `/api/iyzico/callback`'i çağırır, oradan abonelik doğrulanıp `profiles.plan`/`current_period_end` güncellenir.
+6. Bu model **otomatik yenilemeli değil, manuel yenilemedir**: kullanıcı ayda bir tekrar `/checkout`'tan ödeme yapar. Tam otomatik tekrarlayan tahsilat için iyzico'nun kart saklama + `subscription` (recurring charge) uçlarının ayrıca entegre edilmesi gerekir.

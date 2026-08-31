@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, LinkButton, Badge, Button } from "@/components/ui";
-import { openBillingPortal } from "@/app/pricing/actions";
-import { FREE_SESSION_LIMIT } from "@/lib/stripe";
+import { Card, LinkButton, Badge } from "@/components/ui";
+import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
 import type { FeedbackRow, SessionRow, CaseRow } from "@/lib/types";
 
 export default async function DashboardPage() {
@@ -10,8 +9,12 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase.from("profiles").select("plan").eq("id", user!.id).single();
-  const plan = (profile?.plan as "free" | "pro") ?? "free";
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan, current_period_end")
+    .eq("id", user!.id)
+    .single();
+  const proActive = isProActive(profile);
 
   const { data: sessions } = await supabase
     .from("sessions")
@@ -33,27 +36,25 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold text-brand-900">Panel</h1>
-            <Badge>{plan === "pro" ? "Pro" : "Ücretsiz"}</Badge>
+            <Badge>{proActive ? "Pro" : "Ücretsiz"}</Badge>
           </div>
           <p className="text-sm text-brand-600">Hoş geldin{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ""}.</p>
         </div>
         <div className="flex gap-2">
-          {plan === "pro" ? (
-            <form action={openBillingPortal}>
-              <Button type="submit" variant="ghost">
-                Aboneliği yönet
-              </Button>
-            </form>
-          ) : (
-            <LinkButton href="/pricing" variant="ghost">
-              Pro&apos;ya geç
-            </LinkButton>
-          )}
+          <LinkButton href="/pricing" variant="ghost">
+            {proActive ? "Aboneliği görüntüle" : "Pro'ya geç"}
+          </LinkButton>
           <LinkButton href="/cases">Yeni mülakat başlat</LinkButton>
         </div>
       </div>
 
-      {plan === "free" && (sessions?.length ?? 0) >= FREE_SESSION_LIMIT && (
+      {proActive && profile?.current_period_end && (
+        <p className="mt-2 text-xs text-brand-500">
+          Pro aboneliğin {new Date(profile.current_period_end).toLocaleDateString("tr-TR")} tarihine kadar aktif.
+        </p>
+      )}
+
+      {!proActive && (sessions?.length ?? 0) >= FREE_SESSION_LIMIT && (
         <Card className="mt-4 bg-brand-50">
           <p className="text-sm text-brand-800">
             Ücretsiz mülakat hakkını kullandın.{" "}

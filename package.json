@@ -8,16 +8,17 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/run-migrations.mjs",
-    "db:seed": "node scripts/seed.mjs"
+    "db:seed": "node scripts/seed.mjs",
+    "iyzico:setup": "node scripts/iyzico-setup.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
+    "iyzipay": "^2.0.69",
     "next": "16.3.3",
     "openai": "^4.68.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "stripe": "^17.3.1"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
