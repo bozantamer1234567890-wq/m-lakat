@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { initializeSubscriptionCheckout, unwrap, PRICING_PLAN_REFERENCE_CODE } from "@/lib/iyzico";
+import { initializeSubscriptionCheckout, unwrap, PLANS, isBillingCycle } from "@/lib/iyzico";
 
 export type CheckoutState = {
   error?: string;
@@ -18,6 +18,9 @@ export async function createSubscriptionCheckout(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const cycleInput = formData.get("cycle");
+  const cycle = isBillingCycle(cycleInput) ? cycleInput : "monthly";
 
   const name = String(formData.get("name") ?? "");
   const surname = String(formData.get("surname") ?? "");
@@ -41,7 +44,7 @@ export async function createSubscriptionCheckout(
         locale: "tr",
         conversationId: user.id,
         callbackUrl: `${siteUrl}/api/iyzico/callback`,
-        pricingPlanReferenceCode: PRICING_PLAN_REFERENCE_CODE,
+        pricingPlanReferenceCode: PLANS[cycle].referenceCode,
         subscriptionInitialStatus: "ACTIVE",
         customer: {
           name,

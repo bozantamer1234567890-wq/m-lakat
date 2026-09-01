@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
-import { retrieveSubscriptionCheckout, unwrap } from "@/lib/iyzico";
+import { retrieveSubscriptionCheckout, unwrap, PLANS } from "@/lib/iyzico";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function addOneMonth(date: Date) {
   const result = new Date(date);
   result.setMonth(result.getMonth() + 1);
   return result;
+}
+
+function addOneYear(date: Date) {
+  const result = new Date(date);
+  result.setFullYear(result.getFullYear() + 1);
+  return result;
+}
+
+function periodEndFor(pricingPlanReferenceCode: string | undefined) {
+  const addPeriod = pricingPlanReferenceCode === PLANS.yearly.referenceCode ? addOneYear : addOneMonth;
+  return addPeriod(new Date()).toISOString();
 }
 
 export async function POST(req: Request) {
@@ -26,7 +37,7 @@ export async function POST(req: Request) {
 
     // conversationId, checkout başlatılırken user.id olarak gönderilmişti.
     const userId = result.conversationId;
-    const currentPeriodEnd = addOneMonth(new Date()).toISOString();
+    const currentPeriodEnd = periodEndFor(result.pricingPlanReferenceCode);
 
     const supabase = createAdminClient();
 

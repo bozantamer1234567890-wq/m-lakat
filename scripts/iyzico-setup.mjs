@@ -19,69 +19,102 @@ const iyzipay = new Iyzipay({
   uri: process.env.IYZICO_URI || "https://sandbox-api.iyzipay.com",
 });
 
-function createProduct() {
-  return new Promise((resolve, reject) => {
-    iyzipay.subscriptionProduct.create(
-      { locale: "tr", conversationId: "prova-setup-product", name: "Prova Pro", description: "Prova sınırsız mülakat pratiği aboneliği" },
-      (err, result) => (err ? reject(err) : resolve(result))
-    );
-  });
-}
-
-function createPricingPlan(productReferenceCode) {
-  return new Promise((resolve, reject) => {
-    iyzipay.subscriptionPricingPlan.create(
-      {
-        productReferenceCode,
-        locale: "tr",
-        conversationId: "prova-setup-plan",
-        name: "Prova Pro Aylık",
-        price: "299",
-        currencyCode: "TRY",
-        paymentInterval: "MONTHLY",
-        paymentIntervalCount: 1,
-        trialPeriodDays: 0,
-        planPaymentType: "RECURRING",
-      },
-      (err, result) => (err ? reject(err) : resolve(result))
-    );
-  });
-}
+const PRODUCT_NAME = "Prova Pro";
+const PLANS = [
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE", name: "Prova Pro Aylık", price: "299", interval: "MONTHLY", count: 1 },
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY", name: "Prova Pro Yıllık", price: "2990", interval: "YEARLY", count: 1 },
+];
 
 function extractReferenceCode(result) {
   return result.data?.referenceCode ?? result.referenceCode;
 }
 
+function extractList(result) {
+  return result.data?.items ?? result.items ?? [];
+}
+
+function findOrCreateProduct() {
+  return new Promise((resolve, reject) => {
+    iyzipay.subscriptionProduct.retrieveList({ locale: "tr", page: 1, count: 50 }, (err, result) => {
+      if (err) return reject(err);
+      if (result.status !== "success") return reject(new Error(JSON.stringify(result)));
+      const existing = extractList(result).find((p) => p.name === PRODUCT_NAME);
+      if (existing) return resolve(existing.referenceCode);
+
+      iyzipay.subscriptionProduct.create(
+        { locale: "tr", conversationId: "prova-setup-product", name: PRODUCT_NAME, description: "Prova sınırsız mülakat pratiği aboneliği" },
+        (createErr, createResult) => {
+          if (createErr) return reject(createErr);
+          if (createResult.status !== "success") return reject(new Error(JSON.stringify(createResult)));
+          const code = extractReferenceCode(createResult);
+          if (!code) return reject(new Error("Ürün referenceCode bulunamadı: " + JSON.stringify(createResult)));
+          resolve(code);
+        }
+      );
+    });
+  });
+}
+
+function findExistingPlan(productReferenceCode, name) {
+  return new Promise((resolve, reject) => {
+    iyzipay.subscriptionPricingPlan.retrieveList(
+      { productReferenceCode, locale: "tr", page: 1, count: 50 },
+      (err, result) => {
+        if (err) return reject(err);
+        if (result.status !== "success") return reject(new Error(JSON.stringify(result)));
+        const existing = extractList(result).find((p) => p.name === name);
+        resolve(existing?.referenceCode ?? null);
+      }
+    );
+  });
+}
+
+function createPlan(productReferenceCode, plan) {
+  return new Promise((resolve, reject) => {
+    iyzipay.subscriptionPricingPlan.create(
+      {
+        productReferenceCode,
+        locale: "tr",
+        conversationId: `prova-setup-plan-${plan.interval.toLowerCase()}`,
+        name: plan.name,
+        price: plan.price,
+        currencyCode: "TRY",
+        paymentInterval: plan.interval,
+        paymentIntervalCount: plan.count,
+        trialPeriodDays: 0,
+        planPaymentType: "RECURRING",
+      },
+      (err, result) => {
+        if (err) return reject(err);
+        if (result.status !== "success") return reject(new Error(JSON.stringify(result)));
+        const code = extractReferenceCode(result);
+        if (!code) return reject(new Error("Plan referenceCode bulunamadı: " + JSON.stringify(result)));
+        resolve(code);
+      }
+    );
+  });
+}
+
 async function main() {
-  console.log("iyzico ürünü oluşturuluyor...");
-  const product = await createProduct();
-  console.log("Ham yanıt (ürün):", JSON.stringify(product, null, 2));
-  if (product.status !== "success") {
-    console.error("Ürün oluşturulamadı, yukarıdaki yanıta bak.");
-    process.exit(1);
-  }
-  const productReferenceCode = extractReferenceCode(product);
-  if (!productReferenceCode) {
-    console.error("referenceCode yanıtta bulunamadı — yukarıdaki ham yanıttan elle bul ve devam et.");
-    process.exit(1);
-  }
-  console.log("✓ Ürün oluşturuldu:", productReferenceCode);
+  console.log(`Ürün kontrol ediliyor: ${PRODUCT_NAME}...`);
+  const productReferenceCode = await findOrCreateProduct();
+  console.log("✓ Ürün:", productReferenceCode);
 
-  console.log("Fiyat planı oluşturuluyor...");
-  const plan = await createPricingPlan(productReferenceCode);
-  console.log("Ham yanıt (plan):", JSON.stringify(plan, null, 2));
-  if (plan.status !== "success") {
-    console.error("Plan oluşturulamadı, yukarıdaki yanıta bak.");
-    process.exit(1);
-  }
-  const planReferenceCode = extractReferenceCode(plan);
-  if (!planReferenceCode) {
-    console.error("Plan referenceCode yanıtta bulunamadı — yukarıdaki ham yanıttan elle bul.");
-    process.exit(1);
+  const envLines = [];
+  for (const plan of PLANS) {
+    console.log(`\nPlan kontrol ediliyor: ${plan.name}...`);
+    let referenceCode = await findExistingPlan(productReferenceCode, plan.name);
+    if (referenceCode) {
+      console.log(`✓ Zaten mevcut: ${referenceCode}`);
+    } else {
+      referenceCode = await createPlan(productReferenceCode, plan);
+      console.log(`✓ Oluşturuldu: ${referenceCode}`);
+    }
+    envLines.push(`${plan.envVar}=${referenceCode}`);
   }
 
-  console.log("\n.env.local dosyana şunu ekle:");
-  console.log(`IYZICO_PRICING_PLAN_REFERENCE_CODE=${planReferenceCode}`);
+  console.log("\n.env.local dosyana şunları ekle (varsa güncelle):");
+  envLines.forEach((line) => console.log(line));
 }
 
 main().catch((err) => {

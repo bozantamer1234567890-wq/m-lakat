@@ -3,10 +3,11 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createSubscriptionCheckout, type CheckoutState } from "@/app/checkout/actions";
 import { Button, Card } from "@/components/ui";
+import type { BillingCycle } from "@/lib/iyzico";
 
 const initialState: CheckoutState = {};
 
-export function CheckoutForm() {
+export function CheckoutForm({ cycle, price, label }: { cycle: BillingCycle; price: number; label: string }) {
   const [state, formAction, isPending] = useActionState(createSubscriptionCheckout, initialState);
   const formContentRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +44,11 @@ export function CheckoutForm() {
   return (
     <Card>
       <form action={formAction} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <input type="hidden" name="cycle" value={cycle} />
+        <p className="sm:col-span-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">
+          Seçilen plan: <strong>Prova Pro ({label})</strong> — ₺{price.toLocaleString("tr-TR")}
+          {cycle === "monthly" ? "/ay" : "/yıl"}
+        </p>
         {state.error && (
           <p className="sm:col-span-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>
         )}

@@ -13,7 +13,27 @@ export function getIyzipay() {
   return client;
 }
 
-export const PRICING_PLAN_REFERENCE_CODE = process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!;
+export type BillingCycle = "monthly" | "yearly";
+
+export const PLANS: Record<BillingCycle, { referenceCode: string; price: number; label: string }> = {
+  monthly: {
+    referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!,
+    price: 299,
+    label: "Aylık",
+  },
+  yearly: {
+    // 2 ay bedava: aylık planın 10 katı fiyat (maliyetimiz OpenAI kullanımına göre kullanıcı
+    // başına ayda birkaç TL olduğundan, marjı korumak yerine dönüşümü artırmak daha kârlı).
+    referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY!,
+    price: 2990,
+    label: "Yıllık",
+  },
+};
+
+export function isBillingCycle(value: unknown): value is BillingCycle {
+  return value === "monthly" || value === "yearly";
+}
+
 export const FREE_SESSION_LIMIT = 2;
 
 export type ProfilePlanFields = {

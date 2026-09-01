@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, Badge, LinkButton } from "@/components/ui";
-import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
+import { FREE_SESSION_LIMIT, isProActive, PLANS } from "@/lib/iyzico";
 
 export default async function PricingPage() {
   const supabase = await createClient();
@@ -28,7 +28,7 @@ export default async function PricingPage() {
         Ücretsiz {FREE_SESSION_LIMIT} mülakat hakkıyla dene, beğenirsen Pro&apos;ya geç.
       </p>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
+      <div className="mt-10 grid gap-6 sm:grid-cols-3">
         <Card className="text-left">
           <h3 className="font-medium text-brand-900">Ücretsiz</h3>
           <p className="mt-2 text-3xl font-semibold text-brand-900">₺0</p>
@@ -39,13 +39,47 @@ export default async function PricingPage() {
           </ul>
         </Card>
 
+        <Card className="text-left">
+          <h3 className="font-medium text-brand-900">Pro Aylık</h3>
+          <p className="mt-2 text-3xl font-semibold text-brand-900">
+            ₺{PLANS.monthly.price}
+            <span className="text-base font-normal text-brand-600">/ay</span>
+          </p>
+          <ul className="mt-4 space-y-2 text-sm text-brand-600">
+            <li>Sınırsız mülakat oturumu</li>
+            <li>Tüm case kütüphanesi</li>
+            <li>Detaylı geri bildirim ve ilerleme takibi</li>
+          </ul>
+
+          {proActive ? (
+            <div className="mt-6">
+              <p className="text-center text-sm text-brand-700">
+                Aboneliğin {currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : ""} tarihine
+                kadar aktif.
+              </p>
+              <LinkButton href="/checkout?cycle=monthly" variant="secondary" className="mt-3 w-full">
+                Erken yenile
+              </LinkButton>
+            </div>
+          ) : (
+            <LinkButton href={user ? "/checkout?cycle=monthly" : "/login"} variant="secondary" className="mt-6 w-full">
+              {user ? "Aylık başla" : "Giriş yap ve devam et"}
+            </LinkButton>
+          )}
+        </Card>
+
         <Card className="border-brand-400 text-left">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-brand-900">Pro</h3>
-            <Badge>Önerilen</Badge>
+            <h3 className="font-medium text-brand-900">Pro Yıllık</h3>
+            <Badge>2 ay hediye</Badge>
           </div>
           <p className="mt-2 text-3xl font-semibold text-brand-900">
-            ₺299<span className="text-base font-normal text-brand-600">/ay</span>
+            ₺{PLANS.yearly.price.toLocaleString("tr-TR")}
+            <span className="text-base font-normal text-brand-600">/yıl</span>
+          </p>
+          <p className="mt-1 text-xs text-brand-600">
+            Aylık ₺{Math.round(PLANS.yearly.price / 12)}&apos;a denk gelir — aylık plana göre %
+            {Math.round((1 - PLANS.yearly.price / (PLANS.monthly.price * 12)) * 100)} avantajlı.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-brand-600">
             <li>Sınırsız mülakat oturumu</li>
@@ -60,13 +94,13 @@ export default async function PricingPage() {
                 Aboneliğin {currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : ""} tarihine
                 kadar aktif.
               </p>
-              <LinkButton href="/checkout" variant="secondary" className="mt-3 w-full">
+              <LinkButton href="/checkout?cycle=yearly" variant="secondary" className="mt-3 w-full">
                 Erken yenile
               </LinkButton>
             </div>
           ) : (
-            <LinkButton href={user ? "/checkout" : "/login"} className="mt-6 w-full">
-              {user ? "Pro'ya geç" : "Giriş yap ve devam et"}
+            <LinkButton href={user ? "/checkout?cycle=yearly" : "/login"} className="mt-6 w-full">
+              {user ? "Yıllık başla" : "Giriş yap ve devam et"}
             </LinkButton>
           )}
         </Card>

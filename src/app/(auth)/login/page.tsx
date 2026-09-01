@@ -4,9 +4,9 @@ import { Button, Card, LinkButton } from "@/components/ui";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; info?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, info } = await searchParams;
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-6 py-12">
@@ -16,6 +16,9 @@ export default async function LoginPage({
           Case interview pratiğine kaldığın yerden devam et.
         </p>
 
+        {info && (
+          <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{info}</p>
+        )}
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
