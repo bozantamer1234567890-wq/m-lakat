@@ -12,6 +12,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "New password should be different from the old password.":
     "Yeni şifre eskisinden farklı olmalı.",
   "Auth session missing!": "Oturum bulunamadı, linki tekrar iste.",
+  "Error sending confirmation email":
+    "Onay e-postası gönderilemedi. Bu genelde e-posta gönderim ayarlarımızdaki geçici bir sorundan kaynaklanır, lütfen daha sonra tekrar dene.",
 };
 
 function translateAuthError(message: string) {
