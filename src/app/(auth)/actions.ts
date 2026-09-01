@@ -8,6 +8,10 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "Email not confirmed":
     "E-posta adresini henüz onaylamadın. Gelen kutunu (spam klasörü dahil) kontrol edip onay linkine tıkla.",
   "User already registered": "Bu e-posta ile zaten bir hesap var, giriş yapmayı dene.",
+  "Password should be at least 6 characters.": "Şifre en az 6 karakter olmalı.",
+  "New password should be different from the old password.":
+    "Yeni şifre eskisinden farklı olmalı.",
+  "Auth session missing!": "Oturum bulunamadı, linki tekrar iste.",
 };
 
 function translateAuthError(message: string) {
@@ -64,4 +68,40 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+  const supabase = await createClient();
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+  });
+
+  // Kullanıcı hesabın olup olmadığını bu mesajdan anlayamasın diye her zaman aynı bilgi mesajını gösteriyoruz.
+  redirect(
+    `/forgot-password?info=${encodeURIComponent(
+      "Bu e-posta ile kayıtlı bir hesap varsa, şifre sıfırlama linki gönderildi."
+    )}`
+  );
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    redirect(`/reset-password?error=${encodeURIComponent(translateAuthError(error.message))}`);
+  }
+
+  redirect(
+    `/login?info=${encodeURIComponent("Şifren güncellendi, yeni şifrenle giriş yapabilirsin.")}`
+  );
 }

@@ -21,10 +21,8 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: "Şirket",
     links: [
-      { href: "/#", label: "Hakkımızda" },
-      { href: "/#", label: "İletişim" },
-      { href: "/#", label: "Gizlilik" },
-      { href: "/#", label: "Kullanım şartları" },
+      { href: "/privacy", label: "Gizlilik" },
+      { href: "/terms", label: "Kullanım şartları" },
     ],
   },
 ];

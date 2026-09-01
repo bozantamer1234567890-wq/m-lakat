@@ -219,7 +219,9 @@ export default async function DashboardPage() {
               </div>
               <h3 className="mt-2 font-medium text-brand-900">{todaysCase.title}</h3>
               <p className="mt-1 text-sm text-brand-600">
-                {weakest.label} skorun ({weakest.value}) hedefinin altında — bu case tam bu beceriyi çalıştırıyor.
+                {completed.length > 0
+                  ? `${weakest.label} skorun (${weakest.value}) hedefinin altında — bu case tam bu beceriyi çalıştırıyor.`
+                  : "İlk case'in için seni bu becerini ölçecek bir senaryo seçtik."}
               </p>
             </div>
             <form action={startSession} className="flex gap-2">
@@ -299,7 +301,9 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <p className="text-sm text-brand-600">Güçlü beceri</p>
-          <p className="mt-1 text-xl font-semibold text-brand-900">{strongest ? strongest.label : "—"}</p>
+          <p className="mt-1 text-xl font-semibold text-brand-900">
+            {completed.length > 0 && strongest ? strongest.label : "—"}
+          </p>
         </Card>
         <Card>
           <p className="text-sm text-brand-600">Güncel seri</p>

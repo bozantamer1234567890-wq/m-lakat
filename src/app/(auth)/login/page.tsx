@@ -47,7 +47,13 @@ export default async function LoginPage({
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-brand-600">
+        <p className="mt-4 text-center text-sm">
+          <LinkButton href="/forgot-password" variant="ghost" className="!p-0 !inline">
+            Şifremi unuttum
+          </LinkButton>
+        </p>
+
+        <p className="mt-4 text-center text-sm text-brand-600">
           Hesabın yok mu?{" "}
           <LinkButton href="/signup" variant="ghost" className="!p-0 !inline">
             Kayıt ol
