@@ -181,7 +181,7 @@ export function InterviewClient({
           disabled={isLoading}
           className="self-start rounded-lg border border-border px-3 py-1.5 text-xs text-brand-600 hover:border-brand-400 disabled:opacity-50"
         >
-          💡 İpucu iste
+          İpucu iste
         </button>
       )}
 

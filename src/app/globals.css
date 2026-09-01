@@ -1,31 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f4ef;
-  --foreground: #0b1220;
+  /* Ivory / White / Obsidian / Emerald */
+  --background: #f7f5f0;
+  --foreground: #111315;
   --surface: #ffffff;
-  --surface-muted: #eeece3;
-  --border: #e2e0d8;
+  --surface-muted: #efece3;
+  --border: #e3e0d7;
 
-  --dark-surface: #0b1220;
-  --dark-foreground: #f5f4ef;
-  --dark-border: #232b3a;
+  --dark-surface: #101412;
+  --dark-foreground: #f7f5f0;
+  --dark-border: rgba(255, 255, 255, 0.12);
 
-  --success: #16845b;
-  --warning: #c88719;
+  --success: #16805b;
+  --warning: #b7791f;
+  --error: #b42318;
+  --accent-soft: #ddf3ee;
 
-  /* brand-* kept as the working scale for every existing component;
-     500 doubles as the single accent color per the design system. */
-  --brand-50: #fafaf8;
-  --brand-100: #eeece3;
-  --brand-200: #e2e0d8;
-  --brand-300: #c5c3ba;
-  --brand-400: #5c6470;
-  --brand-500: #315cff;
-  --brand-600: #2448d8;
-  --brand-700: #3a3f47;
-  --brand-800: #171d29;
-  --brand-900: #0b1220;
+  /* brand-* kept as the working scale for every existing component; 400 is muted
+     text, 500/600 are the single Emerald accent (CTA, links, active/AI state),
+     the rest is a neutral ivory-gray scale so accent stays selective, not global. */
+  --brand-50: #fafaf7;
+  --brand-100: #efece3;
+  --brand-200: #e3e0d7;
+  --brand-300: #c7c3b5;
+  --brand-400: #667085;
+  --brand-500: #0f766e;
+  --brand-600: #0b5f59;
+  --brand-700: #3a3f42;
+  --brand-800: #1c1f21;
+  --brand-900: #111315;
 }
 
 @theme inline {
@@ -41,6 +45,8 @@
 
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-accent-soft: var(--accent-soft);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
@@ -59,18 +65,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b1220;
+    --background: #0b0f0d;
     --foreground: #f5f4ef;
-    --surface: #141b29;
-    --surface-muted: #1a2233;
-    --border: #232b3a;
+    --surface: #111715;
+    --surface-muted: #171d1a;
+    --border: #232a27;
 
-    --brand-50: #1a2233;
-    --brand-100: #232b3a;
-    --brand-200: #2d3648;
-    --brand-300: #4a5468;
-    --brand-400: #8891a0;
-    --brand-600: #5b7dff;
+    --accent-soft: #16342e;
+
+    --brand-50: #111715;
+    --brand-100: #171d1a;
+    --brand-200: #202826;
+    --brand-300: #3a423f;
+    --brand-400: #a7ada9;
+    --brand-500: #39a88f;
+    --brand-600: #2d8a75;
     --brand-700: #d4d4d1;
     --brand-800: #ececea;
     --brand-900: #f5f4ef;

@@ -73,7 +73,7 @@ export default async function PricingPage({
           </ul>
         </Card>
 
-        <Card className="border-brand-400 text-left">
+        <Card className="border-brand-500 text-left">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium text-brand-900">Pro</h3>

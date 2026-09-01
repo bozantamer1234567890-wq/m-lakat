@@ -180,7 +180,7 @@ export default async function DashboardPage() {
       )}
 
       {todaysCase && weakest && (
-        <Card className="mt-6 border-brand-400">
+        <Card className="mt-6 border-brand-500">
           <p className="text-xs font-medium uppercase tracking-wide text-brand-500">
             Bugün ne pratik etmeliyim?
           </p>
