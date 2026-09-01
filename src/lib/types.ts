@@ -56,5 +56,6 @@ export type FeedbackRow = {
   strengths: string;
   improvements: string;
   summary: string;
+  timestamped_notes: import("./ai/interview").TimestampedNote[];
   created_at: string;
 };

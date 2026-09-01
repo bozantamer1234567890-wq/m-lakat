@@ -12,18 +12,127 @@ import {
   skillForCategory,
   SKILL_LABELS,
 } from "@/lib/cases";
-import type { CaseRow } from "@/lib/types";
+import { elapsedLabel, elapsedSeconds, parseTimestampLabel, type TimestampedNote } from "@/lib/ai/interview";
+import { extractExhibit } from "@/lib/ai/exhibit";
+import type { CaseRow, MessageRow } from "@/lib/types";
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
+/** Bir zaman damgasına en yakın ADAY mesajını bulur — "kanıt" olarak gerçek transkript metnini gösterebilmek için. */
+function findEvidenceMessage(
+  messages: Pick<MessageRow, "role" | "content" | "created_at">[],
+  sessionStartedAt: string,
+  timestamp: string
+): string | null {
+  const target = parseTimestampLabel(timestamp);
+  if (target === null) return null;
+  const candidates = messages.filter((m) => m.role === "user");
+  if (candidates.length === 0) return null;
+  const closest = candidates.reduce((best, m) => {
+    const diff = Math.abs(elapsedSeconds(sessionStartedAt, m.created_at) - target);
+    const bestDiff = Math.abs(elapsedSeconds(sessionStartedAt, best.created_at) - target);
+    return diff < bestDiff ? m : best;
+  });
+  return closest.content;
+}
+
+function ScoreBar({
+  label,
+  value,
+  notes,
+  messages,
+  sessionStartedAt,
+}: {
+  label: string;
+  value: number;
+  notes?: TimestampedNote[];
+  messages?: Pick<MessageRow, "role" | "content" | "created_at">[];
+  sessionStartedAt?: string;
+}) {
   return (
     <div>
-      <div className="flex justify-between text-sm text-brand-700">
+      <div className="flex items-center justify-between text-sm text-brand-700">
         <span>{label}</span>
-        <span className="font-medium">{value}/100</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{value}/100</span>
+          {notes && notes.length > 0 && messages && sessionStartedAt && (
+            <details className="group">
+              <summary className="cursor-pointer list-none text-xs text-brand-500 underline decoration-dotted">
+                Neden?
+              </summary>
+              <div className="mt-2 flex flex-col gap-2 rounded-lg bg-surface-muted p-3 text-left">
+                {notes.map((note, i) => {
+                  const evidence = findEvidenceMessage(messages, sessionStartedAt, note.timestamp);
+                  return (
+                    <div key={i} className="text-xs">
+                      <div className="flex items-center gap-2 text-brand-400">
+                        <span className="font-mono">{note.timestamp}</span>
+                        <span
+                          className={note.type === "strength" ? "text-success" : "text-warning"}
+                        >
+                          {note.type === "strength" ? "Güçlü yön" : "Gelişim alanı"}
+                        </span>
+                      </div>
+                      {evidence && (
+                        <p className="mt-1 rounded-md bg-surface px-2 py-1.5 italic text-brand-700">
+                          &ldquo;{evidence}&rdquo;
+                        </p>
+                      )}
+                      <p className="mt-1 text-brand-600">{note.note}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
+          )}
+        </div>
       </div>
       <div className="mt-1 h-2 rounded-full bg-brand-100">
         <div className="h-2 rounded-full bg-brand-500" style={{ width: `${value}%` }} />
       </div>
+    </div>
+  );
+}
+
+function ReplayTimeline({
+  messages,
+  sessionStartedAt,
+  notes,
+}: {
+  messages: Pick<MessageRow, "role" | "content" | "created_at">[];
+  sessionStartedAt: string;
+  notes: TimestampedNote[];
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {messages
+        .filter((m) => m.role !== "system")
+        .map((m, i) => {
+          const label = elapsedLabel(sessionStartedAt, m.created_at);
+          const matchingNotes =
+            m.role === "user" ? notes.filter((n) => n.timestamp === label) : [];
+          return (
+            <div key={i} className="flex gap-3">
+              <span className="w-10 shrink-0 pt-0.5 font-mono text-xs text-brand-400">{label}</span>
+              <div className="flex-1">
+                <p className="text-xs text-brand-400">{m.role === "user" ? "Aday" : "Mülakatçı"}</p>
+                <p className="mt-0.5 text-sm text-brand-800">
+                  {m.role === "user" ? m.content : extractExhibit(m.content).text}
+                </p>
+                {matchingNotes.map((note, j) => (
+                  <p
+                    key={j}
+                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${
+                      note.type === "strength"
+                        ? "bg-accent-soft text-success"
+                        : "bg-warning/10 text-warning"
+                    }`}
+                  >
+                    {SKILL_LABELS[note.skill]}: {note.note}
+                  </p>
+                ))}
+              </div>
+            </div>
+          );
+        })}
     </div>
   );
 }
@@ -153,6 +262,14 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     );
   }
 
+  const { data: messages } = feedback
+    ? await supabase
+        .from("messages")
+        .select("role, content, created_at")
+        .eq("session_id", id)
+        .order("created_at", { ascending: true })
+    : { data: null };
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <Badge>{session.cases!.title}</Badge>
@@ -170,11 +287,41 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
           </Card>
 
           <Card className="mt-4 flex flex-col gap-4">
-            <ScoreBar label="Yapı" value={feedback.structure_score} />
-            <ScoreBar label="Analiz" value={feedback.analysis_score} />
-            <ScoreBar label="İş muhakemesi" value={feedback.business_judgment_score} />
-            <ScoreBar label="İletişim" value={feedback.communication_score} />
-            <ScoreBar label="Sayısal akıl yürütme" value={feedback.quantitative_reasoning_score} />
+            <ScoreBar
+              label="Yapı"
+              value={feedback.structure_score}
+              notes={feedback.timestamped_notes?.filter((n: TimestampedNote) => n.skill === "structure_score")}
+              messages={messages ?? undefined}
+              sessionStartedAt={session.started_at}
+            />
+            <ScoreBar
+              label="Analiz"
+              value={feedback.analysis_score}
+              notes={feedback.timestamped_notes?.filter((n: TimestampedNote) => n.skill === "analysis_score")}
+              messages={messages ?? undefined}
+              sessionStartedAt={session.started_at}
+            />
+            <ScoreBar
+              label="İş muhakemesi"
+              value={feedback.business_judgment_score}
+              notes={feedback.timestamped_notes?.filter((n: TimestampedNote) => n.skill === "business_judgment_score")}
+              messages={messages ?? undefined}
+              sessionStartedAt={session.started_at}
+            />
+            <ScoreBar
+              label="İletişim"
+              value={feedback.communication_score}
+              notes={feedback.timestamped_notes?.filter((n: TimestampedNote) => n.skill === "communication_score")}
+              messages={messages ?? undefined}
+              sessionStartedAt={session.started_at}
+            />
+            <ScoreBar
+              label="Sayısal akıl yürütme"
+              value={feedback.quantitative_reasoning_score}
+              notes={feedback.timestamped_notes?.filter((n: TimestampedNote) => n.skill === "quantitative_reasoning_score")}
+              messages={messages ?? undefined}
+              sessionStartedAt={session.started_at}
+            />
           </Card>
 
           <Card className="mt-4">
@@ -191,6 +338,24 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
             <h3 className="font-medium text-brand-900">Gelişim alanları</h3>
             <p className="mt-2 whitespace-pre-line text-sm text-brand-700">{feedback.improvements}</p>
           </Card>
+
+          {messages && messages.length > 0 && (
+            <Card className="mt-4">
+              <details>
+                <summary className="cursor-pointer list-none">
+                  <h3 className="inline font-medium text-brand-900">Mülakatı tekrar izle</h3>
+                  <span className="ml-2 text-xs text-brand-400">(transkript — ses kaydı yok)</span>
+                </summary>
+                <div className="mt-4 max-h-[420px] overflow-y-auto pr-1">
+                  <ReplayTimeline
+                    messages={messages}
+                    sessionStartedAt={session.started_at}
+                    notes={feedback.timestamped_notes ?? []}
+                  />
+                </div>
+              </details>
+            </Card>
+          )}
 
           {nextCase && (
             <Card className="mt-4">

@@ -93,9 +93,40 @@ export function candidateLevelFromAverage(avgOverallScore: number | null): Candi
   return "average";
 }
 
+/** Oturum başından bir mesaja kadar geçen saniye. */
+export function elapsedSeconds(sessionStartedAt: string, messageCreatedAt: string): number {
+  return Math.max(
+    0,
+    Math.round((new Date(messageCreatedAt).getTime() - new Date(sessionStartedAt).getTime()) / 1000)
+  );
+}
+
+/** Oturum başından bir mesaja kadar geçen süreyi "dk:sn" olarak biçimlendirir. */
+export function elapsedLabel(sessionStartedAt: string, messageCreatedAt: string): string {
+  const seconds = elapsedSeconds(sessionStartedAt, messageCreatedAt);
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, "0")}`;
+}
+
+/** "dk:sn" metnini toplam saniyeye çevirir (AI çıktısını gerçek mesajlarla eşlemek için). */
+export function parseTimestampLabel(label: string): number | null {
+  const match = label.match(/^(\d+):(\d{1,2})$/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+export type TimestampedNote = {
+  timestamp: string;
+  skill: "structure_score" | "analysis_score" | "business_judgment_score" | "communication_score" | "quantitative_reasoning_score";
+  type: "strength" | "improvement";
+  note: string;
+};
+
 export function buildFeedbackPrompt(caseSummary: string, transcript: string) {
   return [
-    "Aşağıda bir case interview transkripti var. Adayın performansını değerlendir.",
+    "Aşağıda bir case interview transkripti var. Her adayın (Aday:) mesajının başında [dk:sn] formatında",
+    "o mesajın oturum başından itibaren geçen süresi var. Adayın performansını değerlendir.",
     "Şu case üzerinden mülakat yapıldı: " + caseSummary,
     "",
     "TRANSKRİPT:",
@@ -103,7 +134,11 @@ export function buildFeedbackPrompt(caseSummary: string, transcript: string) {
     "",
     "business_judgment_score: adayın önerilerinin ticari gerçekçiliğini ve risk farkındalığını ölçer.",
     "quantitative_reasoning_score: adayın sayısal hesaplama ve varsayım netliğini ölçer.",
+    "",
+    "timestamped_notes: 2-4 adet, HER BİRİ transkriptte gerçekten var olan bir [dk:sn] değerine birebir",
+    "referans versin (uydurma). Adayın o andaki cevabıyla ilgili kısa, somut bir gözlem yaz.",
+    "",
     "Şu JSON şemasına birebir uyan bir çıktı üret (başka hiçbir metin ekleme):",
-    `{"overall_score": 0-100, "structure_score": 0-100, "analysis_score": 0-100, "communication_score": 0-100, "business_judgment_score": 0-100, "quantitative_reasoning_score": 0-100, "strengths": "kısa madde madde metin", "improvements": "kısa madde madde metin", "summary": "2-3 cümlelik genel değerlendirme"}`,
+    `{"overall_score": 0-100, "structure_score": 0-100, "analysis_score": 0-100, "communication_score": 0-100, "business_judgment_score": 0-100, "quantitative_reasoning_score": 0-100, "strengths": "kısa madde madde metin", "improvements": "kısa madde madde metin", "summary": "2-3 cümlelik genel değerlendirme", "timestamped_notes": [{"timestamp": "dk:sn", "skill": "structure_score|analysis_score|business_judgment_score|communication_score|quantitative_reasoning_score", "type": "strength|improvement", "note": "kısa gözlem"}]}`,
   ].join("\n");
 }
