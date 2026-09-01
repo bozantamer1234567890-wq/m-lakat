@@ -40,6 +40,7 @@ export type MessageRow = {
   role: "user" | "assistant" | "system";
   content: string;
   audio_url: string | null;
+  exhibit: import("./ai/exhibit").Exhibit | null;
   created_at: string;
 };
 

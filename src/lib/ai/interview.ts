@@ -1,3 +1,5 @@
+import { EXHIBIT_PROMPT_GUIDANCE } from "./exhibit";
+
 export type InterviewPhase =
   | "opening"
   | "structure"
@@ -60,7 +62,8 @@ export function buildSystemPrompt(
   casePrompt: string,
   phase: InterviewPhase,
   style: InterviewStyle = "real",
-  level: CandidateLevel = "average"
+  level: CandidateLevel = "average",
+  allowExhibits: boolean = false
 ) {
   return [
     "Sen deneyimli bir üst düzey yönetim danışmanlığı (McKinsey/BCG/Bain tarzı) mülakatçısısın.",
@@ -72,6 +75,8 @@ export function buildSystemPrompt(
     "- " + STYLE_GUIDANCE[style],
     LEVEL_GUIDANCE[level] ? "- " + LEVEL_GUIDANCE[level] : null,
     "- Şu anki aşama: " + phase + ". " + PHASE_GUIDANCE[phase],
+    allowExhibits ? "" : null,
+    allowExhibits ? EXHIBIT_PROMPT_GUIDANCE : null,
     "",
     "CASE BRIEF:",
     casePrompt,

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { extractExhibit } from "@/lib/ai/exhibit";
 import { InterviewClient } from "./interview-client";
 
 export default async function InterviewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,7 +38,11 @@ export default async function InterviewPage({ params }: { params: Promise<{ id: 
       interviewStyle={session.interview_style}
       kind={session.kind}
       initialPhase={session.phase}
-      initialMessages={(messages ?? []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))}
+      initialMessages={(messages ?? []).map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: extractExhibit(m.content).text,
+        exhibit: m.exhibit ?? undefined,
+      }))}
     />
   );
 }

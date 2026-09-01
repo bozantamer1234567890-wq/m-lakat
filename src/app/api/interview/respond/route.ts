@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOpenAI, CHAT_MODEL } from "@/lib/ai/openai";
 import { buildSystemPrompt, candidateLevelFromAverage, type InterviewPhase } from "@/lib/ai/interview";
+import { extractExhibit } from "@/lib/ai/exhibit";
 
 // Deterministic phase schedule based on how many user turns have happened so far.
 const PHASE_SCHEDULE: { upTo: number; phase: InterviewPhase }[] = [
@@ -90,19 +91,27 @@ export async function POST(req: Request) {
     : null;
   const level = candidateLevelFromAverage(avgRecentScore);
 
+  const allowExhibits = session.kind === "practice" && (phase === "analysis" || phase === "recommendation");
+
   const openai = getOpenAI();
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
     messages: [
-      { role: "system", content: buildSystemPrompt(session.cases!.prompt, phase, session.interview_style, level) },
+      {
+        role: "system",
+        content: buildSystemPrompt(session.cases!.prompt, phase, session.interview_style, level, allowExhibits),
+      },
       ...(history ?? []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
       { role: "user", content: message },
     ],
   });
 
-  const reply = completion.choices[0]?.message?.content ?? "";
+  const rawReply = completion.choices[0]?.message?.content ?? "";
+  const { text: reply, exhibit } = extractExhibit(rawReply);
 
-  await supabase.from("messages").insert({ session_id: sessionId, role: "assistant", content: reply });
+  await supabase
+    .from("messages")
+    .insert({ session_id: sessionId, role: "assistant", content: rawReply, exhibit });
 
   const isCompleted = phase === "completed";
   await supabase
@@ -114,5 +123,5 @@ export async function POST(req: Request) {
     })
     .eq("id", sessionId);
 
-  return NextResponse.json({ reply, phase, completed: isCompleted });
+  return NextResponse.json({ reply, exhibit, phase, completed: isCompleted });
 }

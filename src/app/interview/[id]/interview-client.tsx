@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PHASE_LABELS, PHASE_ORDER, type InterviewPhase } from "@/lib/ai/interview";
+import type { Exhibit } from "@/lib/ai/exhibit";
 import { Button, Card } from "@/components/ui";
+import { ExhibitCard } from "@/components/exhibit-card";
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; exhibit?: Exhibit | null };
 
 export function InterviewClient({
   sessionId,
@@ -52,7 +54,7 @@ export function InterviewClient({
 
     if (!res.ok) return;
 
-    setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+    setMessages((prev) => [...prev, { role: "assistant", content: data.reply, exhibit: data.exhibit }]);
     setPhase(data.phase);
 
     if (mode === "voice" && data.reply) {
@@ -173,15 +175,15 @@ export function InterviewClient({
           </p>
         )}
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-              m.role === "user"
-                ? "self-end bg-brand-500 text-white"
-                : "self-start bg-brand-50 text-brand-900"
-            }`}
-          >
-            {m.content}
+          <div key={i} className={`flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+            <div
+              className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                m.role === "user" ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-900"
+              }`}
+            >
+              {m.content}
+            </div>
+            {m.exhibit && <ExhibitCard exhibit={m.exhibit} />}
           </div>
         ))}
         {isLoading && <p className="text-xs text-brand-500">Mülakatçı yazıyor…</p>}
