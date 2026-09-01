@@ -48,6 +48,10 @@ Danışmanlık (McKinsey/BCG/Bain tarzı) case interview pratiği için sesli + 
 2. [vercel.com/new](https://vercel.com/new) üzerinden repoyu import et.
 3. Environment Variables kısmına `.env.local` içindeki tüm değişkenleri ekle (`NEXT_PUBLIC_SITE_URL`'i Vercel'in verdiği gerçek adresle güncelle).
 4. Deploy et. İlk deploy sonrası veritabanı migration ve seed'i yerelden (`.env.local`'da gerçek Supabase bilgileriyle) bir kere çalıştırman yeterli — Supabase projesi tüm ortamlarda paylaşılır.
+5. Özel domain bağladıysan (örn. `prova.website`):
+   - Vercel → Project Settings → Domains'ten domain'i ekle ve DNS kayıtlarını domain sağlayıcında ayarla.
+   - Vercel → Project Settings → Environment Variables'ta `NEXT_PUBLIC_SITE_URL`'i `https://prova.website` yap ve **redeploy et** (env değişikliği yeni deploy'da devreye girer).
+   - Supabase Dashboard → Authentication → URL Configuration: **Site URL**'i `https://prova.website` yap, **Redirect URLs**'e `https://prova.website/auth/callback` ekle — yoksa kayıt e-postasındaki onay linki ve iyzico ödeme sonrası yönlendirmesi çalışmaz.
 
 ## Veritabanı şeması
 

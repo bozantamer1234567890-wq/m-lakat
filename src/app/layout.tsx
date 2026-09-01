@@ -13,9 +13,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Prova — Case Interview Pratiği",
   description: "Sesli ve yazılı AI ile gerçekçi case interview pratiği yapın.",
+  openGraph: {
+    title: "Prova — Case Interview Pratiği",
+    description: "Sesli ve yazılı AI ile gerçekçi case interview pratiği yapın.",
+    url: siteUrl,
+    siteName: "Prova",
+    locale: "tr_TR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
