@@ -33,15 +33,32 @@ const SKILL_TO_CATEGORY: Record<SkillKey, CaseCategory> = {
   quantitative_reasoning_score: "fiyatlandirma",
 };
 
-export function weakestSkill(feedback: FeedbackRow): { key: SkillKey; label: string; value: number } {
-  const entries = (Object.keys(SKILL_LABELS) as SkillKey[]).map((key) => ({
+function skillEntries(feedback: FeedbackRow) {
+  return (Object.keys(SKILL_LABELS) as SkillKey[]).map((key) => ({
     key,
     label: SKILL_LABELS[key],
     value: feedback[key],
   }));
-  return entries.reduce((min, cur) => (cur.value < min.value ? cur : min));
+}
+
+export function weakestSkill(feedback: FeedbackRow): { key: SkillKey; label: string; value: number } {
+  return skillEntries(feedback).reduce((min, cur) => (cur.value < min.value ? cur : min));
+}
+
+export function strongestSkill(feedback: FeedbackRow): { key: SkillKey; label: string; value: number } {
+  return skillEntries(feedback).reduce((max, cur) => (cur.value > max.value ? cur : max));
 }
 
 export function recommendedCategoryFor(feedback: FeedbackRow): CaseCategory {
   return SKILL_TO_CATEGORY[weakestSkill(feedback).key];
+}
+
+export function categoryForSkill(key: SkillKey): CaseCategory {
+  return SKILL_TO_CATEGORY[key];
+}
+
+/** "Interview readiness": aday hazırlığının tek bir sayıya indirgenmiş hâli, 5 beceri skorunun ortalaması. */
+export function readinessScore(feedback: FeedbackRow): number {
+  const entries = skillEntries(feedback);
+  return Math.round(entries.reduce((sum, e) => sum + e.value, 0) / entries.length);
 }

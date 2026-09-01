@@ -7,6 +7,8 @@ import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
 export async function startSession(formData: FormData) {
   const caseId = String(formData.get("case_id"));
   const mode = String(formData.get("mode") ?? "text") as "text" | "voice";
+  const kind = String(formData.get("kind") ?? "practice") as "practice" | "diagnostic";
+  const interviewStyle = String(formData.get("interview_style") ?? "real") as "real" | "training";
 
   const supabase = await createClient();
   const {
@@ -20,11 +22,12 @@ export async function startSession(formData: FormData) {
     .eq("id", user.id)
     .single();
 
-  if (!isProActive(profile)) {
+  if (kind !== "diagnostic" && !isProActive(profile)) {
     const { count } = await supabase
       .from("sessions")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("kind", "practice");
     if ((count ?? 0) >= FREE_SESSION_LIMIT) {
       redirect("/pricing");
     }
@@ -32,7 +35,7 @@ export async function startSession(formData: FormData) {
 
   const { data, error } = await supabase
     .from("sessions")
-    .insert({ user_id: user.id, case_id: caseId, mode })
+    .insert({ user_id: user.id, case_id: caseId, mode, kind, interview_style: interviewStyle })
     .select("id")
     .single();
 

@@ -15,21 +15,40 @@ const CATEGORY_FILTERS: { value: CaseCategory | "all"; label: string }[] = [
   { value: "operasyon", label: CATEGORY_LABELS.operasyon },
 ];
 
+const DIFFICULTY_FILTERS: { value: CaseRow["difficulty"] | "all"; label: string }[] = [
+  { value: "all", label: "Tüm seviyeler" },
+  { value: "easy", label: DIFFICULTY_LABELS.easy },
+  { value: "medium", label: DIFFICULTY_LABELS.medium },
+  { value: "hard", label: DIFFICULTY_LABELS.hard },
+];
+
 export default async function CasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; difficulty?: string }>;
 }) {
-  const { category: categoryParam } = await searchParams;
+  const { category: categoryParam, difficulty: difficultyParam } = await searchParams;
   const activeCategory = CATEGORY_FILTERS.some((f) => f.value === categoryParam)
     ? (categoryParam as CaseCategory | "all")
     : "all";
+  const activeDifficulty = DIFFICULTY_FILTERS.some((f) => f.value === difficultyParam)
+    ? (difficultyParam as CaseRow["difficulty"] | "all")
+    : "all";
+
+  const buildHref = (overrides: { category?: string; difficulty?: string }) => {
+    const params = new URLSearchParams();
+    const category = overrides.category ?? activeCategory;
+    const difficulty = overrides.difficulty ?? activeDifficulty;
+    if (category !== "all") params.set("category", category);
+    if (difficulty !== "all") params.set("difficulty", difficulty);
+    const qs = params.toString();
+    return qs ? `/cases?${qs}` : "/cases";
+  };
 
   const supabase = await createClient();
   let query = supabase.from("cases").select("*").eq("is_published", true);
-  if (activeCategory !== "all") {
-    query = query.eq("category", activeCategory);
-  }
+  if (activeCategory !== "all") query = query.eq("category", activeCategory);
+  if (activeDifficulty !== "all") query = query.eq("difficulty", activeDifficulty);
   const { data: cases } = await query.order("created_at", { ascending: false });
 
   return (
@@ -43,11 +62,27 @@ export default async function CasesPage({
         {CATEGORY_FILTERS.map((f) => (
           <Link
             key={f.value}
-            href={f.value === "all" ? "/cases" : `/cases?category=${f.value}`}
+            href={buildHref({ category: f.value })}
             className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
               activeCategory === f.value
                 ? "border-brand-500 bg-brand-500 text-white"
                 : "border-border text-brand-700 hover:border-brand-400"
+            }`}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
+
+      <div className="mt-2 flex flex-wrap gap-2">
+        {DIFFICULTY_FILTERS.map((f) => (
+          <Link
+            key={f.value}
+            href={buildHref({ difficulty: f.value })}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+              activeDifficulty === f.value
+                ? "border-brand-400 bg-brand-100 text-brand-900"
+                : "border-border text-brand-500 hover:border-brand-400"
             }`}
           >
             {f.label}
@@ -68,21 +103,33 @@ export default async function CasesPage({
               <p className="mt-2 text-sm text-brand-600">{c.summary}</p>
               <p className="mt-2 text-xs text-brand-400">~{c.estimated_minutes} dk</p>
             </div>
-            <form action={startSession} className="mt-4 flex gap-2">
+            <form action={startSession} className="mt-4 flex flex-col gap-3">
               <input type="hidden" name="case_id" value={c.id} />
-              <Button type="submit" name="mode" value="text" variant="secondary" className="flex-1">
-                Yazılı başla
-              </Button>
-              <Button type="submit" name="mode" value="voice" className="flex-1">
-                Sesli başla
-              </Button>
+              <fieldset className="flex gap-3 text-xs text-brand-600">
+                <label className="flex items-center gap-1.5">
+                  <input type="radio" name="interview_style" value="real" defaultChecked />
+                  Gerçek mülakat
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <input type="radio" name="interview_style" value="training" />
+                  Antrenman (ipucu alabilirsin)
+                </label>
+              </fieldset>
+              <div className="flex gap-2">
+                <Button type="submit" name="mode" value="text" variant="secondary" className="flex-1">
+                  Yazılı başla
+                </Button>
+                <Button type="submit" name="mode" value="voice" className="flex-1">
+                  Sesli başla
+                </Button>
+              </div>
             </form>
           </Card>
         ))}
         {(cases ?? []).length === 0 && (
           <Card>
             <p className="text-sm text-brand-600">
-              Bu kategoride henüz case yok. `npm run db:seed` komutuyla örnek caseleri oluşturabilirsin.
+              Bu filtrelerde henüz case yok. `npm run db:seed` komutuyla örnek caseleri oluşturabilirsin.
             </p>
           </Card>
         )}

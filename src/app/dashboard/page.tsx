@@ -1,7 +1,17 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, LinkButton, Badge } from "@/components/ui";
+import { Card, LinkButton, Badge, Button } from "@/components/ui";
+import { startSession } from "@/app/cases/actions";
 import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
-import { SKILL_LABELS, type SkillKey } from "@/lib/cases";
+import {
+  SKILL_LABELS,
+  readinessScore,
+  weakestSkill,
+  categoryForSkill,
+  CATEGORY_LABELS,
+  DIFFICULTY_LABELS,
+  type SkillKey,
+} from "@/lib/cases";
 import type { FeedbackRow, SessionRow, CaseRow } from "@/lib/types";
 
 function currentStreak(completedDates: string[]): number {
@@ -76,19 +86,20 @@ export default async function DashboardPage() {
     .order("started_at", { ascending: false })
     .limit(50);
 
+  if (!sessions || sessions.length === 0) redirect("/diagnostic");
+
   const completed = (sessions ?? []).filter((s) => s.status === "completed" && s.feedback);
   const recentSessions = (sessions ?? []).slice(0, 10);
-  const avgScore = completed.length
-    ? Math.round(
-        completed.reduce((sum, s) => sum + (s.feedback?.overall_score ?? 0), 0) / completed.length
-      )
-    : null;
 
   const streak = currentStreak(completed.map((s) => s.completed_at!));
-  const scoreHistory = completed
+  const readinessHistory = completed
     .slice()
     .reverse()
-    .map((s) => s.feedback!.overall_score);
+    .map((s) => readinessScore(s.feedback!));
+  const currentReadiness = readinessHistory.length ? readinessHistory[readinessHistory.length - 1] : null;
+  const previousReadiness =
+    readinessHistory.length > 1 ? readinessHistory[readinessHistory.length - 2] : null;
+  const readinessTarget = 85;
 
   const skillAverages = (Object.keys(SKILL_LABELS) as SkillKey[]).map((key) => ({
     key,
@@ -103,6 +114,34 @@ export default async function DashboardPage() {
   const weakest = skillAverages.length
     ? skillAverages.reduce((min, s) => (s.value < min.value ? s : min))
     : null;
+
+  // Recurring mistake: en zayıf beceri son birkaç oturumda tekrar tekrar aynıysa uyar.
+  const recentWeakestKeys = completed.slice(0, 5).map((s) => weakestSkill(s.feedback!).key);
+  const recurringCounts = recentWeakestKeys.reduce<Partial<Record<SkillKey, number>>>((acc, key) => {
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+  const recurringEntry = (Object.entries(recurringCounts) as [SkillKey, number][]).sort(
+    (a, b) => b[1] - a[1]
+  )[0];
+  const recurringMistake =
+    recurringEntry && recurringEntry[1] >= 2
+      ? { label: SKILL_LABELS[recurringEntry[0]], count: recurringEntry[1] }
+      : null;
+
+  // Bugünün pratiği: en zayıf beceriyle eşleşen, henüz denenmemiş bir case öner.
+  let todaysCase: CaseRow | null = null;
+  if (weakest) {
+    const attemptedCaseIds = (sessions ?? []).map((s) => s.case_id);
+    const targetCategory = categoryForSkill(weakest.key);
+    const { data: candidates } = await supabase
+      .from("cases")
+      .select("*")
+      .eq("is_published", true)
+      .eq("category", targetCategory)
+      .limit(10);
+    todaysCase = (candidates ?? []).find((c) => !attemptedCaseIds.includes(c.id)) ?? candidates?.[0] ?? null;
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10">
@@ -140,16 +179,88 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {todaysCase && weakest && (
+        <Card className="mt-6 border-brand-400">
+          <p className="text-xs font-medium uppercase tracking-wide text-brand-500">
+            Bugün ne pratik etmeliyim?
+          </p>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge>{CATEGORY_LABELS[todaysCase.category]}</Badge>
+                <Badge>{DIFFICULTY_LABELS[todaysCase.difficulty]}</Badge>
+                <span className="text-xs text-brand-400">~{todaysCase.estimated_minutes} dk</span>
+              </div>
+              <h3 className="mt-2 font-medium text-brand-900">{todaysCase.title}</h3>
+              <p className="mt-1 text-sm text-brand-600">
+                {weakest.label} skorun ({weakest.value}) hedefinin altında — bu case tam bu beceriyi çalıştırıyor.
+              </p>
+            </div>
+            <form action={startSession} className="flex gap-2">
+              <input type="hidden" name="case_id" value={todaysCase.id} />
+              <input type="hidden" name="mode" value="text" />
+              <Button type="submit">Bugünün pratiğine başla →</Button>
+            </form>
+          </div>
+        </Card>
+      )}
+
+      {recurringMistake && (
+        <Card className="mt-4 bg-surface-muted">
+          <p className="text-xs font-medium uppercase tracking-wide text-warning">
+            Tekrarlayan gelişim alanı
+          </p>
+          <p className="mt-2 text-sm text-brand-700">
+            <strong className="text-brand-900">{recurringMistake.label}</strong>, son {recentWeakestKeys.length}{" "}
+            case&apos;in {recurringMistake.count} tanesinde en zayıf alanın oldu.
+          </p>
+        </Card>
+      )}
+
+      {currentReadiness !== null && (
+        <Card className="mt-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-brand-400">
+            Interview Readiness
+          </p>
+          <div className="mt-2 flex items-end justify-between">
+            <div>
+              <p className="text-5xl font-semibold tracking-tight text-brand-900">
+                {currentReadiness}
+                <span className="text-lg font-normal text-brand-400"> / 100</span>
+              </p>
+              {previousReadiness !== null && (
+                <p className="mt-1 text-sm text-brand-600">
+                  Önceki: {previousReadiness} {currentReadiness >= previousReadiness ? "↑" : "↓"}
+                </p>
+              )}
+            </div>
+            <p className="text-sm text-brand-500">
+              Hedef: <strong className="text-brand-900">{readinessTarget}</strong>
+            </p>
+          </div>
+          <div className="mt-3 h-1.5 rounded-full bg-brand-100">
+            <div
+              className="h-1.5 rounded-full bg-brand-500"
+              style={{ width: `${Math.min(100, (currentReadiness / readinessTarget) * 100)}%` }}
+            />
+          </div>
+          {weakest && (
+            <p className="mt-3 text-sm text-brand-600">
+              85&apos;e ulaşmak için: <strong className="text-brand-900">{weakest.label}</strong>{" "}
+              üzerine 1-2 case daha pratik et.
+            </p>
+          )}
+        </Card>
+      )}
+
+      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card>
           <p className="text-sm text-brand-600">Tamamlanan case</p>
           <p className="mt-1 text-3xl font-semibold text-brand-900">{completed.length}</p>
         </Card>
         <Card>
-          <p className="text-sm text-brand-600">Ortalama skor</p>
-          <p className="mt-1 text-3xl font-semibold text-brand-900">
-            {avgScore !== null ? avgScore : "—"}
-          </p>
+          <p className="text-sm text-brand-600">Güçlü beceri</p>
+          <p className="mt-1 text-xl font-semibold text-brand-900">{strongest ? strongest.label : "—"}</p>
         </Card>
         <Card>
           <p className="text-sm text-brand-600">Güncel seri</p>
@@ -166,8 +277,8 @@ export default async function DashboardPage() {
       {completed.length > 0 && (
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
           <Card>
-            <p className="text-sm text-brand-600">Zaman içinde performans</p>
-            <Sparkline values={scoreHistory} />
+            <p className="text-sm text-brand-600">Zaman içinde hazırlık skoru</p>
+            <Sparkline values={readinessHistory} />
           </Card>
           <Card>
             <p className="text-sm text-brand-600">Beceri dağılımı</p>

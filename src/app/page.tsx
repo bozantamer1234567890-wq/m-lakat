@@ -5,18 +5,18 @@ import { InteractiveDemo } from "@/components/marketing/interactive-demo";
 const PROCESS_STEPS = [
   {
     n: "01",
-    title: "Bir case seç",
-    desc: "Sektör, case tipi ve zorluk seviyesine göre filtrele; ne kadar süreceğini önceden gör.",
+    title: "Hazırlığını ölç",
+    desc: "5 dakikalık diagnostic mülakatla şu anki seviyeni gör: yapı, analiz, iş muhakemesi, iletişim, sayısal akıl yürütme.",
   },
   {
     n: "02",
-    title: "AI ile mülakat yap",
-    desc: "Yazılı veya sesli — AI mülakatçı seni yönlendirmez, gerçek bir mülakatçı gibi sorgular.",
+    title: "AI ile gerçek mülakat yap",
+    desc: "Zorlayan gerçek mod veya ipucu alabildiğin antrenman modu — sistem, geçmiş performansına göre soru zorluğunu otomatik ayarlar.",
   },
   {
     n: "03",
-    title: "Geri bildirimini al",
-    desc: "Dakikalar içinde yapı, analiz ve iletişim boyutlarında detaylı, uygulanabilir bir rapor.",
+    title: "Sonraki case otomatik önerilir",
+    desc: "Her oturum sonunda en zayıf becerini tespit eder, tekrarlayan hataları işaretler ve tam o beceriyi çalıştıracak case'i önerir.",
   },
 ];
 
@@ -38,9 +38,11 @@ export default function Home() {
             Yapay zeka destekli case interview pratiği
           </p>
           <h1 className="mt-5 text-4xl font-semibold leading-[1.05] tracking-tight text-brand-900 sm:text-5xl lg:text-[3.4rem]">
-            Danışman gibi düşün.
+            Net düşün.
             <br />
-            Profesyonel gibi pratik yap.
+            Daha iyi yapılandır.
+            <br />
+            Özgüvenle mülakat yap.
           </h1>
           <p className="mt-6 max-w-md text-base leading-relaxed text-brand-600 sm:text-lg">
             AI mülakatçıyla gerçekçi case interview&apos;ler yap. Yapını, analizini ve
@@ -105,6 +107,9 @@ export default function Home() {
           <h2 className="max-w-lg text-3xl font-semibold tracking-tight text-brand-900 sm:text-4xl">
             Bir sonraki mülakatın burada başlıyor.
           </h2>
+          <p className="mt-3 max-w-lg text-sm text-brand-500">
+            Prova sadece case vermez — nasıl mülakat yaptığını öğrenir.
+          </p>
           <div className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
             {PROCESS_STEPS.map((step) => (
               <div key={step.n} className="border-t border-border pt-5">

@@ -34,6 +34,7 @@ export default async function InterviewPage({ params }: { params: Promise<{ id: 
       sessionId={id}
       caseTitle={session.cases!.title}
       mode={session.mode as "text" | "voice"}
+      interviewStyle={session.interview_style}
       initialPhase={session.phase}
       initialMessages={(messages ?? []).map((m) => ({ role: m.role as "user" | "assistant", content: m.content }))}
     />

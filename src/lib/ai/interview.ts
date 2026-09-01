@@ -38,7 +38,30 @@ export function nextPhase(current: InterviewPhase): InterviewPhase {
   return PHASE_ORDER[Math.min(idx + 1, PHASE_ORDER.length - 1)];
 }
 
-export function buildSystemPrompt(casePrompt: string, phase: InterviewPhase) {
+export type InterviewStyle = "real" | "training";
+export type CandidateLevel = "developing" | "average" | "strong";
+
+const LEVEL_GUIDANCE: Record<CandidateLevel, string> = {
+  strong:
+    "Adayın geçmiş performansı güçlü. Daha zorlayıcı takip soruları sor: varsayımlarını kanıtlamasını iste, sonucu değiştirecek senaryoları sor, etkiyi sayısallaştırmasını iste.",
+  developing:
+    "Adayın geçmiş performansı gelişim aşamasında. Sorularını biraz daha küçük adımlara böl, ama yine de çözümü kendisi bulmalı — doğrudan çerçeve verme.",
+  average: "",
+};
+
+const STYLE_GUIDANCE: Record<InterviewStyle, string> = {
+  real:
+    "GERÇEK MÜLAKAT MODU: Gerçek bir mülakatçı gibi davran. İpucu verme, çerçeve önerme, hesaplamada yardım etme. Aday takılırsa sorularla düşünmeye teşvik et ama çözümü söyleme. Varsayımlarını sorgula, gerektiğinde zorlayıcı takip soruları sor.",
+  training:
+    "ANTRENMAN MODU: Aday açıkça ipucu isterse (ör. \"ipucu\", \"yardım\", \"takıldım\" derse) kısa bir çerçeve önerisi, hesaplama yardımı veya netleştirme sun. İstemedikçe hâlâ kendi başına düşünmesini teşvik et, doğrudan cevap verme.",
+};
+
+export function buildSystemPrompt(
+  casePrompt: string,
+  phase: InterviewPhase,
+  style: InterviewStyle = "real",
+  level: CandidateLevel = "average"
+) {
   return [
     "Sen deneyimli bir üst düzey yönetim danışmanlığı (McKinsey/BCG/Bain tarzı) mülakatçısısın.",
     "Aşağıdaki case üzerinden adayla gerçekçi, sesli/yazılı bir case interview simülasyonu yürütüyorsun.",
@@ -46,11 +69,23 @@ export function buildSystemPrompt(casePrompt: string, phase: InterviewPhase) {
     "- Kısa, net, profesyonel ve nazik konuş. Tek seferde tek soru sor.",
     "- Adayın yerine düşünme; adayı yönlendirici sorularla düşünmeye teşvik et.",
     "- Türkçe konuş (aday başka bir dilde yazarsa o dile geç).",
+    "- " + STYLE_GUIDANCE[style],
+    LEVEL_GUIDANCE[level] ? "- " + LEVEL_GUIDANCE[level] : null,
     "- Şu anki aşama: " + phase + ". " + PHASE_GUIDANCE[phase],
     "",
     "CASE BRIEF:",
     casePrompt,
-  ].join("\n");
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+}
+
+/** Son tamamlanan oturumların ortalama skoruna göre adayın seviyesini tahmin eder (adaptif zorluk için). */
+export function candidateLevelFromAverage(avgOverallScore: number | null): CandidateLevel {
+  if (avgOverallScore === null) return "average";
+  if (avgOverallScore >= 78) return "strong";
+  if (avgOverallScore <= 50) return "developing";
+  return "average";
 }
 
 export function buildFeedbackPrompt(caseSummary: string, transcript: string) {

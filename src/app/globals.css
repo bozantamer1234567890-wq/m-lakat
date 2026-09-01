@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f5;
-  --foreground: #111111;
+  --background: #f5f4ef;
+  --foreground: #0b1220;
   --surface: #ffffff;
-  --surface-muted: #f0f0ee;
-  --border: #e5e5e0;
+  --surface-muted: #eeece3;
+  --border: #e2e0d8;
 
-  --dark-surface: #0b0b0c;
-  --dark-foreground: #f7f7f5;
-  --dark-border: #232324;
+  --dark-surface: #0b1220;
+  --dark-foreground: #f5f4ef;
+  --dark-border: #232b3a;
 
-  --success: #16a34a;
-  --warning: #f59e0b;
+  --success: #16845b;
+  --warning: #c88719;
 
   /* brand-* kept as the working scale for every existing component;
      500 doubles as the single accent color per the design system. */
-  --brand-50: #fafafa;
-  --brand-100: #f0f0ee;
-  --brand-200: #e5e5e0;
-  --brand-300: #c9c9c4;
-  --brand-400: #8a8a86;
-  --brand-500: #2457ff;
-  --brand-600: #1c46d1;
-  --brand-700: #333333;
-  --brand-800: #1a1a1a;
-  --brand-900: #111111;
+  --brand-50: #fafaf8;
+  --brand-100: #eeece3;
+  --brand-200: #e2e0d8;
+  --brand-300: #c5c3ba;
+  --brand-400: #5c6470;
+  --brand-500: #315cff;
+  --brand-600: #2448d8;
+  --brand-700: #3a3f47;
+  --brand-800: #171d29;
+  --brand-900: #0b1220;
 }
 
 @theme inline {
@@ -59,21 +59,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0b0c;
-    --foreground: #f7f7f5;
-    --surface: #141415;
-    --surface-muted: #1c1c1e;
-    --border: #232324;
+    --background: #0b1220;
+    --foreground: #f5f4ef;
+    --surface: #141b29;
+    --surface-muted: #1a2233;
+    --border: #232b3a;
 
-    --brand-50: #1c1c1e;
-    --brand-100: #232324;
-    --brand-200: #2f2f31;
-    --brand-300: #47474a;
-    --brand-400: #7a7a7d;
+    --brand-50: #1a2233;
+    --brand-100: #232b3a;
+    --brand-200: #2d3648;
+    --brand-300: #4a5468;
+    --brand-400: #8891a0;
     --brand-600: #5b7dff;
     --brand-700: #d4d4d1;
     --brand-800: #ececea;
-    --brand-900: #f7f7f5;
+    --brand-900: #f5f4ef;
   }
 }
 

@@ -2,7 +2,14 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, LinkButton, Badge, Button } from "@/components/ui";
 import { startSession } from "@/app/cases/actions";
-import { CATEGORY_LABELS, DIFFICULTY_LABELS, recommendedCategoryFor, weakestSkill } from "@/lib/cases";
+import {
+  CATEGORY_LABELS,
+  DIFFICULTY_LABELS,
+  recommendedCategoryFor,
+  weakestSkill,
+  strongestSkill,
+  readinessScore,
+} from "@/lib/cases";
 import type { CaseRow } from "@/lib/types";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -67,6 +74,46 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
       .limit(1)
       .maybeSingle();
     nextCase = candidate;
+  }
+
+  if (session.kind === "diagnostic") {
+    const readiness = feedback ? readinessScore(feedback) : null;
+    const strongest = feedback ? strongestSkill(feedback) : null;
+    const weakest = feedback ? weakestSkill(feedback) : null;
+
+    return (
+      <div className="mx-auto max-w-lg px-6 py-16 text-center">
+        <Badge>Hazırlık ölçümü tamamlandı</Badge>
+
+        {!feedback || readiness === null ? (
+          <Card className="mt-6">
+            <p className="text-sm text-brand-600">Sonuç hazırlanıyor, birazdan sayfayı yenile.</p>
+          </Card>
+        ) : (
+          <>
+            <p className="mt-6 text-7xl font-semibold tracking-tight text-brand-900">{readiness}</p>
+            <p className="mt-1 text-sm text-brand-500">/ 100 — Interview Readiness</p>
+
+            <div className="mt-8 grid grid-cols-2 gap-4 text-left">
+              <Card>
+                <p className="text-xs font-medium uppercase tracking-wide text-success">En güçlü</p>
+                <p className="mt-2 font-medium text-brand-900">{strongest!.label}</p>
+                <p className="text-2xl font-semibold text-brand-900">{strongest!.value}</p>
+              </Card>
+              <Card>
+                <p className="text-xs font-medium uppercase tracking-wide text-warning">En zayıf</p>
+                <p className="mt-2 font-medium text-brand-900">{weakest!.label}</p>
+                <p className="text-2xl font-semibold text-brand-900">{weakest!.value}</p>
+              </Card>
+            </div>
+
+            <LinkButton href="/dashboard" className="mt-8 w-full">
+              Pratik planımı oluştur →
+            </LinkButton>
+          </>
+        )}
+      </div>
+    );
   }
 
   return (

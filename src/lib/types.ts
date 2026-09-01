@@ -16,6 +16,7 @@ export type CaseRow = {
   summary: string;
   prompt: string;
   is_published: boolean;
+  is_diagnostic: boolean;
   created_at: string;
 };
 
@@ -26,6 +27,8 @@ export type SessionRow = {
   mode: "text" | "voice";
   phase: "opening" | "structure" | "analysis" | "recommendation" | "completed";
   status: "in_progress" | "completed" | "abandoned";
+  kind: "practice" | "diagnostic";
+  interview_style: "real" | "training";
   started_at: string;
   completed_at: string | null;
 };
