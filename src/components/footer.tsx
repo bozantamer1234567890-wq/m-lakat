@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
@@ -33,10 +34,8 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <p className="text-lg font-semibold tracking-tight text-brand-900">PROVA</p>
-            <p className="mt-2 max-w-[22ch] text-sm text-brand-600">
-              AI destekli case interview pratiği.
-            </p>
+            <Logo />
+            <p className="mt-2 max-w-[22ch] text-sm text-brand-600">AI Case Interview Coach</p>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LinkButton } from "@/components/ui";
+import { Logo } from "@/components/logo";
 
 const NAV_LINKS = [
   { href: "/cases", label: "Pratik" },
@@ -37,8 +38,8 @@ export function NavbarClient({
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight text-brand-900">
-          PROVA
+        <Link href="/" aria-label="Prova anasayfa">
+          <Logo />
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm md:flex">
