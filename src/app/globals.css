@@ -1,22 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fdfbf9;
-  --foreground: #241a12;
+  --background: #f7f7f5;
+  --foreground: #111111;
   --surface: #ffffff;
-  --surface-muted: #f6efe8;
-  --border: #e6d8c8;
+  --surface-muted: #f0f0ee;
+  --border: #e5e5e0;
 
-  --brand-50: #faf6f2;
-  --brand-100: #f3eae0;
-  --brand-200: #e6d3c0;
-  --brand-300: #d5b797;
-  --brand-400: #bc9a73;
-  --brand-500: #987654;
-  --brand-600: #7d5f43;
-  --brand-700: #634b36;
-  --brand-800: #4a3829;
-  --brand-900: #33271c;
+  --dark-surface: #0b0b0c;
+  --dark-foreground: #f7f7f5;
+  --dark-border: #232324;
+
+  --success: #16a34a;
+  --warning: #f59e0b;
+
+  /* brand-* kept as the working scale for every existing component;
+     500 doubles as the single accent color per the design system. */
+  --brand-50: #fafafa;
+  --brand-100: #f0f0ee;
+  --brand-200: #e5e5e0;
+  --brand-300: #c9c9c4;
+  --brand-400: #8a8a86;
+  --brand-500: #2457ff;
+  --brand-600: #1c46d1;
+  --brand-700: #333333;
+  --brand-800: #1a1a1a;
+  --brand-900: #111111;
 }
 
 @theme inline {
@@ -25,6 +34,13 @@
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
   --color-border: var(--border);
+
+  --color-dark-surface: var(--dark-surface);
+  --color-dark-foreground: var(--dark-foreground);
+  --color-dark-border: var(--dark-border);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
@@ -43,11 +59,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1a140e;
-    --foreground: #f3eae0;
-    --surface: #241b13;
-    --surface-muted: #2c2117;
-    --border: #4a3829;
+    --background: #0b0b0c;
+    --foreground: #f7f7f5;
+    --surface: #141415;
+    --surface-muted: #1c1c1e;
+    --border: #232324;
+
+    --brand-50: #1c1c1e;
+    --brand-100: #232324;
+    --brand-200: #2f2f31;
+    --brand-300: #47474a;
+    --brand-400: #7a7a7d;
+    --brand-600: #5b7dff;
+    --brand-700: #d4d4d1;
+    --brand-800: #ececea;
+    --brand-900: #f7f7f5;
   }
 }
 
@@ -55,4 +81,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.5s ease-out both;
+}
+
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+.animate-waveform {
+  animation: waveform 1.2s ease-in-out infinite;
 }

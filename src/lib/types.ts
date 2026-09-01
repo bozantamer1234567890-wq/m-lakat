@@ -1,8 +1,18 @@
+export type CaseCategory =
+  | "pazara-girisi"
+  | "karlilik"
+  | "buyume"
+  | "birlesme-satin-alma"
+  | "fiyatlandirma"
+  | "operasyon";
+
 export type CaseRow = {
   id: string;
   title: string;
   industry: string;
   difficulty: "easy" | "medium" | "hard";
+  category: CaseCategory;
+  estimated_minutes: number;
   summary: string;
   prompt: string;
   is_published: boolean;
@@ -36,6 +46,8 @@ export type FeedbackRow = {
   structure_score: number;
   analysis_score: number;
   communication_score: number;
+  business_judgment_score: number;
+  quantitative_reasoning_score: number;
   strengths: string;
   improvements: string;
   summary: string;

@@ -61,7 +61,9 @@ export function buildFeedbackPrompt(caseSummary: string, transcript: string) {
     "TRANSKRİPT:",
     transcript,
     "",
+    "business_judgment_score: adayın önerilerinin ticari gerçekçiliğini ve risk farkındalığını ölçer.",
+    "quantitative_reasoning_score: adayın sayısal hesaplama ve varsayım netliğini ölçer.",
     "Şu JSON şemasına birebir uyan bir çıktı üret (başka hiçbir metin ekleme):",
-    `{"overall_score": 0-100, "structure_score": 0-100, "analysis_score": 0-100, "communication_score": 0-100, "strengths": "kısa madde madde metin", "improvements": "kısa madde madde metin", "summary": "2-3 cümlelik genel değerlendirme"}`,
+    `{"overall_score": 0-100, "structure_score": 0-100, "analysis_score": 0-100, "communication_score": 0-100, "business_judgment_score": 0-100, "quantitative_reasoning_score": 0-100, "strengths": "kısa madde madde metin", "improvements": "kısa madde madde metin", "summary": "2-3 cümlelik genel değerlendirme"}`,
   ].join("\n");
 }

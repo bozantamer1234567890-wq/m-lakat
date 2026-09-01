@@ -19,10 +19,12 @@ const iyzipay = new Iyzipay({
   uri: process.env.IYZICO_URI || "https://sandbox-api.iyzipay.com",
 });
 
-const PRODUCT_NAME = "Prova Pro";
+const PRODUCT_NAME = "Prova";
 const PLANS = [
   { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE", name: "Prova Pro Aylık", price: "299", interval: "MONTHLY", count: 1 },
   { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY", name: "Prova Pro Yıllık", price: "2990", interval: "YEARLY", count: 1 },
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_MONTHLY", name: "Prova Coach Aylık", price: "599", interval: "MONTHLY", count: 1 },
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_YEARLY", name: "Prova Coach Yıllık", price: "5990", interval: "YEARLY", count: 1 },
 ];
 
 function extractReferenceCode(result) {
@@ -42,7 +44,7 @@ function findOrCreateProduct() {
       if (existing) return resolve(existing.referenceCode);
 
       iyzipay.subscriptionProduct.create(
-        { locale: "tr", conversationId: "prova-setup-product", name: PRODUCT_NAME, description: "Prova sınırsız mülakat pratiği aboneliği" },
+        { locale: "tr", conversationId: "prova-setup-product", name: PRODUCT_NAME, description: "Prova Pro ve Coach abonelik planları" },
         (createErr, createResult) => {
           if (createErr) return reject(createErr);
           if (createResult.status !== "success") return reject(new Error(JSON.stringify(createResult)));

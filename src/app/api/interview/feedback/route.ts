@@ -61,6 +61,8 @@ export async function POST(req: Request) {
       structure_score: parsed.structure_score ?? 0,
       analysis_score: parsed.analysis_score ?? 0,
       communication_score: parsed.communication_score ?? 0,
+      business_judgment_score: parsed.business_judgment_score ?? 0,
+      quantitative_reasoning_score: parsed.quantitative_reasoning_score ?? 0,
       strengths: parsed.strengths ?? "",
       improvements: parsed.improvements ?? "",
       summary: parsed.summary ?? "",

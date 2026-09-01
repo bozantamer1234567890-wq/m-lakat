@@ -3,11 +3,23 @@
 import { useActionState, useEffect, useRef } from "react";
 import { createSubscriptionCheckout, type CheckoutState } from "@/app/checkout/actions";
 import { Button, Card } from "@/components/ui";
-import type { BillingCycle } from "@/lib/iyzico";
+import type { BillingCycle, PlanTier } from "@/lib/iyzico";
 
 const initialState: CheckoutState = {};
 
-export function CheckoutForm({ cycle, price, label }: { cycle: BillingCycle; price: number; label: string }) {
+export function CheckoutForm({
+  tier,
+  cycle,
+  price,
+  tierLabel,
+  cycleLabel,
+}: {
+  tier: PlanTier;
+  cycle: BillingCycle;
+  price: number;
+  tierLabel: string;
+  cycleLabel: string;
+}) {
   const [state, formAction, isPending] = useActionState(createSubscriptionCheckout, initialState);
   const formContentRef = useRef<HTMLDivElement>(null);
 
@@ -45,8 +57,9 @@ export function CheckoutForm({ cycle, price, label }: { cycle: BillingCycle; pri
     <Card>
       <form action={formAction} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <input type="hidden" name="cycle" value={cycle} />
+        <input type="hidden" name="tier" value={tier} />
         <p className="sm:col-span-2 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">
-          Seçilen plan: <strong>Prova Pro ({label})</strong> — ₺{price.toLocaleString("tr-TR")}
+          Seçilen plan: <strong>Prova {tierLabel} ({cycleLabel})</strong> — ₺{price.toLocaleString("tr-TR")}
           {cycle === "monthly" ? "/ay" : "/yıl"}
         </p>
         {state.error && (

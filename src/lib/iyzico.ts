@@ -14,19 +14,23 @@ export function getIyzipay() {
 }
 
 export type BillingCycle = "monthly" | "yearly";
+export type PlanTier = "pro" | "coach";
 
-export const PLANS: Record<BillingCycle, { referenceCode: string; price: number; label: string }> = {
-  monthly: {
-    referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!,
-    price: 299,
-    label: "Aylık",
+type PlanConfig = { referenceCode: string; price: number };
+
+// 2 ay bedava (yıllık = aylığın 10 katı): tek bir kullanıcının gerçek AI maliyeti
+// (OpenAI + iyzico işlem ücreti) ayda birkaç TL seviyesinde kaldığından, marjı korumak
+// yerine dönüşümü artıracak bir indirim vermek daha kârlı.
+export const PLANS: Record<PlanTier, Record<BillingCycle, PlanConfig> & { label: string }> = {
+  pro: {
+    label: "Pro",
+    monthly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!, price: 299 },
+    yearly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY!, price: 2990 },
   },
-  yearly: {
-    // 2 ay bedava: aylık planın 10 katı fiyat (maliyetimiz OpenAI kullanımına göre kullanıcı
-    // başına ayda birkaç TL olduğundan, marjı korumak yerine dönüşümü artırmak daha kârlı).
-    referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY!,
-    price: 2990,
-    label: "Yıllık",
+  coach: {
+    label: "Coach",
+    monthly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_MONTHLY!, price: 599 },
+    yearly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_YEARLY!, price: 5990 },
   },
 };
 
@@ -34,15 +38,42 @@ export function isBillingCycle(value: unknown): value is BillingCycle {
   return value === "monthly" || value === "yearly";
 }
 
+export function isPlanTier(value: unknown): value is PlanTier {
+  return value === "pro" || value === "coach";
+}
+
+export function planTierByReferenceCode(referenceCode: string | undefined): PlanTier | null {
+  if (!referenceCode) return null;
+  for (const tier of Object.keys(PLANS) as PlanTier[]) {
+    if (PLANS[tier].monthly.referenceCode === referenceCode) return tier;
+    if (PLANS[tier].yearly.referenceCode === referenceCode) return tier;
+  }
+  return null;
+}
+
+export function billingCycleByReferenceCode(referenceCode: string | undefined): BillingCycle {
+  if (!referenceCode) return "monthly";
+  for (const tier of Object.keys(PLANS) as PlanTier[]) {
+    if (PLANS[tier].yearly.referenceCode === referenceCode) return "yearly";
+  }
+  return "monthly";
+}
+
 export const FREE_SESSION_LIMIT = 2;
 
 export type ProfilePlanFields = {
-  plan: "free" | "pro";
+  plan: "free" | "pro" | "coach";
   current_period_end: string | null;
 };
 
 export function isProActive(profile: ProfilePlanFields | null | undefined) {
-  if (!profile || profile.plan !== "pro") return false;
+  if (!profile || (profile.plan !== "pro" && profile.plan !== "coach")) return false;
+  if (!profile.current_period_end) return false;
+  return new Date(profile.current_period_end).getTime() > Date.now();
+}
+
+export function isCoachActive(profile: ProfilePlanFields | null | undefined) {
+  if (!profile || profile.plan !== "coach") return false;
   if (!profile.current_period_end) return false;
   return new Date(profile.current_period_end).getTime() > Date.now();
 }
