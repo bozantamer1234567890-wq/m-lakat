@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("plan, current_period_end")
+    .select("plan, current_period_end, onboarding_completed_at, interview_date, daily_practice_minutes")
     .eq("id", user!.id)
     .single();
   const proActive = isProActive(profile);
@@ -87,6 +87,11 @@ export default async function DashboardPage() {
     .limit(50);
 
   if (!sessions || sessions.length === 0) redirect("/diagnostic");
+  if (!profile?.onboarding_completed_at) redirect("/onboarding");
+
+  const daysUntilInterview = profile.interview_date
+    ? Math.ceil((new Date(profile.interview_date).getTime() - new Date().getTime()) / (24 * 60 * 60 * 1000))
+    : null;
 
   const completed = (sessions ?? []).filter((s) => s.status === "completed" && s.feedback);
   const recentSessions = (sessions ?? []).slice(0, 10);
@@ -163,6 +168,16 @@ export default async function DashboardPage() {
             <Badge>{proActive ? "Pro" : "Ücretsiz"}</Badge>
           </div>
           <p className="text-sm text-brand-600">Hoş geldin{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name}` : ""}.</p>
+          {daysUntilInterview !== null && (
+            <p className="mt-0.5 text-xs text-brand-500">
+              {daysUntilInterview > 0
+                ? `Mülakatına ${daysUntilInterview} gün kaldı`
+                : daysUntilInterview === 0
+                  ? "Mülakatın bugün — başarılar!"
+                  : "Mülakat tarihin geçti"}
+              {profile?.daily_practice_minutes ? ` · günlük hedef ${profile.daily_practice_minutes} dk` : ""}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <LinkButton href="/pricing" variant="ghost">

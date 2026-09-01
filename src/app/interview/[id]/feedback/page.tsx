@@ -144,7 +144,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
               </Card>
             </div>
 
-            <LinkButton href="/dashboard" className="mt-8 w-full">
+            <LinkButton href="/onboarding" className="mt-8 w-full">
               Pratik planımı oluştur →
             </LinkButton>
           </>
