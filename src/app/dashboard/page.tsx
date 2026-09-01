@@ -126,8 +126,19 @@ export default async function DashboardPage() {
   )[0];
   const recurringMistake =
     recurringEntry && recurringEntry[1] >= 2
-      ? { label: SKILL_LABELS[recurringEntry[0]], count: recurringEntry[1] }
+      ? { key: recurringEntry[0], label: SKILL_LABELS[recurringEntry[0]], count: recurringEntry[1] }
       : null;
+
+  let recurringDrill: CaseRow | null = null;
+  if (recurringMistake) {
+    const { data: drill } = await supabase
+      .from("cases")
+      .select("*")
+      .eq("is_drill", true)
+      .eq("category", categoryForSkill(recurringMistake.key))
+      .maybeSingle();
+    recurringDrill = drill;
+  }
 
   // Bugünün pratiği: en zayıf beceriyle eşleşen, henüz denenmemiş bir case öner.
   let todaysCase: CaseRow | null = null;
@@ -206,14 +217,27 @@ export default async function DashboardPage() {
       )}
 
       {recurringMistake && (
-        <Card className="mt-4 bg-surface-muted">
-          <p className="text-xs font-medium uppercase tracking-wide text-warning">
-            Tekrarlayan gelişim alanı
-          </p>
-          <p className="mt-2 text-sm text-brand-700">
-            <strong className="text-brand-900">{recurringMistake.label}</strong>, son {recentWeakestKeys.length}{" "}
-            case&apos;in {recurringMistake.count} tanesinde en zayıf alanın oldu.
-          </p>
+        <Card className="mt-4 flex flex-wrap items-center justify-between gap-4 bg-surface-muted">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-warning">
+              Tekrarlayan gelişim alanı
+            </p>
+            <p className="mt-2 text-sm text-brand-700">
+              <strong className="text-brand-900">{recurringMistake.label}</strong>, son {recentWeakestKeys.length}{" "}
+              case&apos;in {recurringMistake.count} tanesinde en zayıf alanın oldu.
+            </p>
+          </div>
+          {recurringDrill && (
+            <form action={startSession}>
+              <input type="hidden" name="case_id" value={recurringDrill.id} />
+              <input type="hidden" name="mode" value="text" />
+              <input type="hidden" name="kind" value="drill" />
+              <input type="hidden" name="interview_style" value="training" />
+              <Button type="submit" variant="secondary">
+                Bu beceriyi çalış →
+              </Button>
+            </form>
+          )}
         </Card>
       )}
 

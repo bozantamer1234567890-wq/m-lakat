@@ -7,7 +7,7 @@ import { FREE_SESSION_LIMIT, isProActive } from "@/lib/iyzico";
 export async function startSession(formData: FormData) {
   const caseId = String(formData.get("case_id"));
   const mode = String(formData.get("mode") ?? "text") as "text" | "voice";
-  const kind = String(formData.get("kind") ?? "practice") as "practice" | "diagnostic";
+  const kind = String(formData.get("kind") ?? "practice") as "practice" | "diagnostic" | "drill";
   const interviewStyle = String(formData.get("interview_style") ?? "real") as "real" | "training";
 
   const supabase = await createClient();
@@ -22,7 +22,7 @@ export async function startSession(formData: FormData) {
     .eq("id", user.id)
     .single();
 
-  if (kind !== "diagnostic" && !isProActive(profile)) {
+  if (kind === "practice" && !isProActive(profile)) {
     const { count } = await supabase
       .from("sessions")
       .select("*", { count: "exact", head: true })

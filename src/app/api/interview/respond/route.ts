@@ -22,8 +22,20 @@ const DIAGNOSTIC_PHASE_SCHEDULE: { upTo: number; phase: InterviewPhase }[] = [
   { upTo: Infinity, phase: "completed" },
 ];
 
-function phaseForTurn(userTurnNumber: number, kind: "practice" | "diagnostic"): InterviewPhase {
-  const schedule = kind === "diagnostic" ? DIAGNOSTIC_PHASE_SCHEDULE : PHASE_SCHEDULE;
+// Drills are a single question + single answer: the client auto-kicks the
+// session off, the AI asks its one question, the candidate answers once,
+// the AI evaluates and the drill ends.
+const DRILL_PHASE_SCHEDULE: { upTo: number; phase: InterviewPhase }[] = [
+  { upTo: 1, phase: "opening" },
+  { upTo: Infinity, phase: "completed" },
+];
+
+function phaseForTurn(
+  userTurnNumber: number,
+  kind: "practice" | "diagnostic" | "drill"
+): InterviewPhase {
+  const schedule =
+    kind === "diagnostic" ? DIAGNOSTIC_PHASE_SCHEDULE : kind === "drill" ? DRILL_PHASE_SCHEDULE : PHASE_SCHEDULE;
   return schedule.find((s) => userTurnNumber <= s.upTo)!.phase;
 }
 

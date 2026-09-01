@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PHASE_LABELS, PHASE_ORDER, type InterviewPhase } from "@/lib/ai/interview";
 import { Button, Card } from "@/components/ui";
@@ -12,6 +12,7 @@ export function InterviewClient({
   caseTitle,
   mode,
   interviewStyle,
+  kind,
   initialPhase,
   initialMessages,
 }: {
@@ -19,6 +20,7 @@ export function InterviewClient({
   caseTitle: string;
   mode: "text" | "voice";
   interviewStyle: "real" | "training";
+  kind: "practice" | "diagnostic" | "drill";
   initialPhase: InterviewPhase;
   initialMessages: ChatMessage[];
 }) {
@@ -32,6 +34,7 @@ export function InterviewClient({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const kickedOffRef = useRef(false);
 
   async function sendMessage(text: string) {
     if (!text.trim()) return;
@@ -77,6 +80,16 @@ export function InterviewClient({
       router.push(`/interview/${sessionId}/feedback`);
     }
   }
+
+  // Drill'ler tek soru + tek cevaptan oluşur; aday konuşmaya başlamayı beklemek
+  // yerine AI sorusunu otomatik tetikleriz.
+  useEffect(() => {
+    if (kind === "drill" && messages.length === 0 && !kickedOffRef.current) {
+      kickedOffRef.current = true;
+      sendMessage("Hazırım, başlayalım.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind]);
 
   async function startRecording() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -124,19 +137,21 @@ export function InterviewClient({
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-xl font-semibold text-brand-900">{caseTitle}</h1>
-          <div className="mt-3 flex gap-1">
-            {PHASE_ORDER.slice(0, 4).map((p, i) => (
-              <div
-                key={p}
-                className={`h-1.5 flex-1 rounded-full ${
-                  i <= phaseIndex ? "bg-brand-500" : "bg-brand-100"
-                }`}
-                title={PHASE_LABELS[p]}
-              />
-            ))}
-          </div>
+          {kind !== "drill" && (
+            <div className="mt-3 flex gap-1">
+              {PHASE_ORDER.slice(0, 4).map((p, i) => (
+                <div
+                  key={p}
+                  className={`h-1.5 flex-1 rounded-full ${
+                    i <= phaseIndex ? "bg-brand-500" : "bg-brand-100"
+                  }`}
+                  title={PHASE_LABELS[p]}
+                />
+              ))}
+            </div>
+          )}
           <div className="mt-1 flex items-center gap-2">
-            <p className="text-xs text-brand-600">{PHASE_LABELS[phase]}</p>
+            <p className="text-xs text-brand-600">{kind === "drill" ? "Drill" : PHASE_LABELS[phase]}</p>
             <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[11px] font-medium text-brand-700">
               {interviewStyle === "real" ? "Gerçek mülakat" : "Antrenman modu"}
             </span>

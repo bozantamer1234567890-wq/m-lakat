@@ -9,6 +9,8 @@ import {
   weakestSkill,
   strongestSkill,
   readinessScore,
+  skillForCategory,
+  SKILL_LABELS,
 } from "@/lib/cases";
 import type { CaseRow } from "@/lib/types";
 
@@ -36,7 +38,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("*, cases(title)")
+    .select("*, cases(title, category)")
     .eq("id", id)
     .eq("user_id", user.id)
     .single();
@@ -74,6 +76,41 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
       .limit(1)
       .maybeSingle();
     nextCase = candidate;
+  }
+
+  if (session.kind === "drill") {
+    const skillKey = skillForCategory(session.cases!.category);
+    const score = feedback ? feedback[skillKey] : null;
+
+    return (
+      <div className="mx-auto max-w-md px-6 py-16 text-center">
+        <Badge>Drill tamamlandı</Badge>
+        <h1 className="mt-4 text-xl font-medium text-brand-900">{SKILL_LABELS[skillKey]}</h1>
+
+        {!feedback || score === null ? (
+          <Card className="mt-6">
+            <p className="text-sm text-brand-600">Değerlendirme hazırlanıyor, birazdan sayfayı yenile.</p>
+          </Card>
+        ) : (
+          <>
+            <p className="mt-4 text-6xl font-semibold tracking-tight text-brand-900">{score}</p>
+            <p className="mt-1 text-sm text-brand-500">/ 100</p>
+            <Card className="mt-6 text-left">
+              <p className="text-sm whitespace-pre-line text-brand-700">{feedback.summary}</p>
+            </Card>
+          </>
+        )}
+
+        <div className="mt-8 flex gap-3">
+          <LinkButton href="/dashboard" variant="secondary" className="flex-1">
+            Panele dön
+          </LinkButton>
+          <LinkButton href="/cases" className="flex-1">
+            Yeni case dene
+          </LinkButton>
+        </div>
+      </div>
+    );
   }
 
   if (session.kind === "diagnostic") {

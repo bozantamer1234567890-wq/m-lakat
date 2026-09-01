@@ -57,6 +57,13 @@ export function categoryForSkill(key: SkillKey): CaseCategory {
   return SKILL_TO_CATEGORY[key];
 }
 
+export function skillForCategory(category: CaseCategory): SkillKey {
+  const entry = (Object.entries(SKILL_TO_CATEGORY) as [SkillKey, CaseCategory][]).find(
+    ([, cat]) => cat === category
+  );
+  return entry![0];
+}
+
 /** "Interview readiness": aday hazırlığının tek bir sayıya indirgenmiş hâli, 5 beceri skorunun ortalaması. */
 export function readinessScore(feedback: FeedbackRow): number {
   const entries = skillEntries(feedback);
