@@ -16,22 +16,33 @@ export function getIyzipay() {
 export type BillingCycle = "monthly" | "yearly";
 export type PlanTier = "pro" | "coach";
 
-type PlanConfig = { referenceCode: string; price: number };
+type PlanConfig = { referenceCode: string; price: number; listPrice: number };
 
 // Fiyatlar gerçek maliyete göre belirlendi: bir kullanıcının aylık OpenAI (chat+whisper+tts)
 // maliyeti Pro'da ~₺25-30, Coach'ta ~₺65-70 seviyesinde kalıyor (ağırlıkla sesli kullanımda
 // bile) — yani bu fiyatlarda dahi %85+ brüt marj var. 2 ay bedava (yıllık = aylığın 10 katı):
 // marjı korumak yerine dönüşümü artıracak bir indirim vermek daha kârlı.
+// `price` = kampanya/lansman fiyatı (checkout'ta ve pricing sayfasında öne çıkan fiyat),
+// `listPrice` = pricing sayfasında üzeri çizili gösterilen liste fiyatı (yanıltıcı bir "eski
+// fiyat" değil, dürüst bir "liste fiyatı / kampanya fiyatı" hiyerarşisi için).
 export const PLANS: Record<PlanTier, Record<BillingCycle, PlanConfig> & { label: string }> = {
   pro: {
     label: "Pro",
-    monthly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!, price: 349 },
-    yearly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY!, price: 3490 },
+    monthly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE!, price: 399, listPrice: 499 },
+    yearly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY!, price: 3990, listPrice: 4990 },
   },
   coach: {
     label: "Coach",
-    monthly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_MONTHLY!, price: 699 },
-    yearly: { referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_YEARLY!, price: 6990 },
+    monthly: {
+      referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_MONTHLY!,
+      price: 699,
+      listPrice: 899,
+    },
+    yearly: {
+      referenceCode: process.env.IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_YEARLY!,
+      price: 6990,
+      listPrice: 8990,
+    },
   },
 };
 

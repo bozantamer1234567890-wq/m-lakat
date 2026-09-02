@@ -21,8 +21,8 @@ const iyzipay = new Iyzipay({
 
 const PRODUCT_NAME = "Prova";
 const PLANS = [
-  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE", name: "Prova Pro Aylık", price: "349", interval: "MONTHLY", count: 1 },
-  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY", name: "Prova Pro Yıllık", price: "3490", interval: "YEARLY", count: 1 },
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE", name: "Prova Pro Aylık", price: "399", interval: "MONTHLY", count: 1 },
+  { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_YEARLY", name: "Prova Pro Yıllık", price: "3990", interval: "YEARLY", count: 1 },
   { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_MONTHLY", name: "Prova Coach Aylık", price: "699", interval: "MONTHLY", count: 1 },
   { envVar: "IYZICO_PRICING_PLAN_REFERENCE_CODE_COACH_YEARLY", name: "Prova Coach Yıllık", price: "6990", interval: "YEARLY", count: 1 },
 ];

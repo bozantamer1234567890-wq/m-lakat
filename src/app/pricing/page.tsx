@@ -1,7 +1,33 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Card, Badge, LinkButton } from "@/components/ui";
-import { FREE_SESSION_LIMIT, isProActive, isCoachActive, isBillingCycle, PLANS } from "@/lib/iyzico";
+import { Badge } from "@/components/ui";
+import { FREE_SESSION_LIMIT, isProActive, isCoachActive, isBillingCycle, PLANS, type PlanTier } from "@/lib/iyzico";
+import { PRICING_PLANS_CONTENT } from "@/lib/pricing-content";
+import { PricingCard, type PricingCardCta, type PricingCardPrice } from "@/components/marketing/pricing-card";
+import { PricingComparisonTable } from "@/components/marketing/pricing-comparison-table";
+
+function paidPrice(tier: PlanTier, cycle: "monthly" | "yearly"): PricingCardPrice {
+  const plan = PLANS[tier][cycle];
+  if (cycle === "monthly") {
+    return {
+      kind: "paid",
+      price: plan.price,
+      listPrice: plan.listPrice,
+      suffix: "/ay",
+      campaignLabel: "Kampanya fiyatı",
+    };
+  }
+  const monthlyEquivalent = Math.round(plan.price / 12);
+  return {
+    kind: "paid",
+    price: plan.price,
+    listPrice: null,
+    suffix: "/yıl",
+    campaignLabel: "Kampanya fiyatı",
+    note: `Ayda ₺${monthlyEquivalent.toLocaleString("tr-TR")}'a denk gelir`,
+    yearlyBadge: "Yıllık plan — 2 ay hediye",
+  };
+}
 
 export default async function PricingPage({
   searchParams,
@@ -30,21 +56,53 @@ export default async function PricingPage({
     currentPeriodEnd = profile?.current_period_end ?? null;
   }
 
-  const pro = PLANS.pro[cycle];
-  const coach = PLANS.coach[cycle];
-  const suffix = cycle === "monthly" ? "/ay" : "/yıl";
+  const periodEndLabel = currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : "";
+
+  const freeContent = PRICING_PLANS_CONTENT.find((p) => p.id === "free")!;
+  const proContent = PRICING_PLANS_CONTENT.find((p) => p.id === "pro")!;
+  const coachContent = PRICING_PLANS_CONTENT.find((p) => p.id === "coach")!;
+
+  const freeCta: PricingCardCta = !user
+    ? { kind: "link", href: "/signup", label: freeContent.ctaLabel, variant: "secondary" }
+    : proActive
+      ? { kind: "note", label: "Pro kullanıyorsun" }
+      : coachActive
+        ? { kind: "note", label: "Coach kullanıyorsun" }
+        : { kind: "note", label: "Mevcut planın" };
+
+  const proCta: PricingCardCta = proActive
+    ? { kind: "active", periodEndLabel, renewHref: `/checkout?tier=pro&cycle=${cycle}` }
+    : {
+        kind: "link",
+        href: user ? `/checkout?tier=pro&cycle=${cycle}` : "/login",
+        label: user ? proContent.ctaLabel : "Giriş yap ve devam et",
+        variant: "primary",
+      };
+
+  const coachCta: PricingCardCta = coachActive
+    ? { kind: "active", periodEndLabel, renewHref: `/checkout?tier=coach&cycle=${cycle}` }
+    : {
+        kind: "link",
+        href: user ? `/checkout?tier=coach&cycle=${cycle}` : "/login",
+        label: user ? coachContent.ctaLabel : "Giriş yap ve devam et",
+        variant: "secondary",
+      };
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-16 text-center">
       <Badge>Basit fiyatlandırma</Badge>
-      <h1 className="mt-4 text-3xl font-semibold text-brand-900">Hedefine uygun planı seç</h1>
-      <p className="mt-3 text-brand-600">
-        Ücretsiz {FREE_SESSION_LIMIT} mülakat hakkıyla dene, beğenirsen Pro veya Coach&apos;a geç.
+      <h1 className="mt-4 text-3xl font-semibold text-brand-900 sm:text-4xl">
+        Bir sonraki case mülakatına hazır ol.
+      </h1>
+      <p className="mx-auto mt-3 max-w-xl text-brand-600">
+        Gerçekçi AI mülakatlarıyla pratik yap, performansını ölç ve eksiklerini sistematik olarak geliştir.
       </p>
+      <p className="mt-2 text-sm font-medium text-brand-500">İlk {FREE_SESSION_LIMIT} mülakat ücretsiz.</p>
 
       <div className="mt-8 inline-flex rounded-full border border-border bg-surface p-1 text-sm">
         <Link
           href="/pricing?cycle=monthly"
+          aria-current={cycle === "monthly" ? "true" : undefined}
           className={`rounded-full px-4 py-1.5 transition-colors ${
             cycle === "monthly" ? "bg-brand-500 text-white" : "text-brand-600"
           }`}
@@ -53,97 +111,34 @@ export default async function PricingPage({
         </Link>
         <Link
           href="/pricing?cycle=yearly"
+          aria-current={cycle === "yearly" ? "true" : undefined}
           className={`rounded-full px-4 py-1.5 transition-colors ${
             cycle === "yearly" ? "bg-brand-500 text-white" : "text-brand-600"
           }`}
         >
-          Yıllık — 2 ay hediye
+          Yıllık · 2 ay hediye
         </Link>
       </div>
 
-      <div className="mt-10 grid gap-6 sm:grid-cols-3">
-        <Card className="text-left">
-          <h3 className="font-medium text-brand-900">Ücretsiz</h3>
-          <p className="mt-1 text-xs text-brand-500">Prova&apos;yı keşfet</p>
-          <p className="mt-3 text-3xl font-semibold text-brand-900">₺0</p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-600">
-            <li>{FREE_SESSION_LIMIT} mülakat oturumu</li>
-            <li>Yazılı pratik</li>
-            <li>Temel geri bildirim</li>
-          </ul>
-        </Card>
+      <div className="mt-10 grid items-stretch gap-6 sm:grid-cols-3">
+        <div className="order-3 sm:order-1">
+          <PricingCard content={freeContent} price={{ kind: "free" }} cta={freeCta} />
+        </div>
+        <div className="order-1 sm:order-2">
+          <PricingCard content={proContent} price={paidPrice("pro", cycle)} cta={proCta} />
+        </div>
+        <div className="order-2 sm:order-3">
+          <PricingCard content={coachContent} price={paidPrice("coach", cycle)} cta={coachCta} />
+        </div>
+      </div>
 
-        <Card className="border-brand-500 text-left">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium text-brand-900">Pro</h3>
-              <p className="mt-1 text-xs text-brand-500">Ciddi hazırlık için</p>
-            </div>
-            <Badge>Önerilen</Badge>
-          </div>
-          <p className="mt-3 text-3xl font-semibold text-brand-900">
-            ₺{pro.price.toLocaleString("tr-TR")}
-            <span className="text-base font-normal text-brand-600">{suffix}</span>
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-600">
-            <li>Sınırsız mülakat oturumu</li>
-            <li>Sesli mülakatlar</li>
-            <li>Gelişmiş geri bildirim</li>
-            <li>İlerleme takibi</li>
-            <li>Tüm case kütüphanesi</li>
-          </ul>
+      <PricingComparisonTable />
 
-          {proActive ? (
-            <div className="mt-6">
-              <p className="text-center text-sm text-brand-700">
-                Aboneliğin {currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : ""} tarihine
-                kadar aktif.
-              </p>
-              <LinkButton href={`/checkout?tier=pro&cycle=${cycle}`} variant="secondary" className="mt-3 w-full">
-                Erken yenile
-              </LinkButton>
-            </div>
-          ) : (
-            <LinkButton href={user ? `/checkout?tier=pro&cycle=${cycle}` : "/login"} className="mt-6 w-full">
-              {user ? "Pro'ya geç" : "Giriş yap ve devam et"}
-            </LinkButton>
-          )}
-        </Card>
-
-        <Card className="text-left">
-          <h3 className="font-medium text-brand-900">Coach</h3>
-          <p className="mt-1 text-xs text-brand-500">Yoğun hazırlık için</p>
-          <p className="mt-3 text-3xl font-semibold text-brand-900">
-            ₺{coach.price.toLocaleString("tr-TR")}
-            <span className="text-base font-normal text-brand-600">{suffix}</span>
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-brand-600">
-            <li>Pro&apos;daki her şey</li>
-            <li>Gelişmiş AI mülakatçı</li>
-            <li>Kişiselleştirilmiş pratik planı</li>
-            <li>Detaylı performans analitiği</li>
-          </ul>
-
-          {coachActive ? (
-            <div className="mt-6">
-              <p className="text-center text-sm text-brand-700">
-                Aboneliğin {currentPeriodEnd ? new Date(currentPeriodEnd).toLocaleDateString("tr-TR") : ""} tarihine
-                kadar aktif.
-              </p>
-              <LinkButton href={`/checkout?tier=coach&cycle=${cycle}`} variant="secondary" className="mt-3 w-full">
-                Erken yenile
-              </LinkButton>
-            </div>
-          ) : (
-            <LinkButton
-              href={user ? `/checkout?tier=coach&cycle=${cycle}` : "/login"}
-              variant="secondary"
-              className="mt-6 w-full"
-            >
-              {user ? "Coach'a geç" : "Giriş yap ve devam et"}
-            </LinkButton>
-          )}
-        </Card>
+      <div className="mx-auto mt-16 max-w-md border-t border-border pt-8">
+        <p className="text-sm font-medium text-brand-700">Karar vermek için acele etme.</p>
+        <p className="mt-1 text-sm text-brand-500">
+          İlk {FREE_SESSION_LIMIT} mülakat ücretsiz. Prova&apos;yı deneyerek kendi performansını gör.
+        </p>
       </div>
     </div>
   );
