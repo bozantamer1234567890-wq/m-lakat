@@ -33,6 +33,7 @@ export function InterviewClient({
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -94,7 +95,22 @@ export function InterviewClient({
   }, [kind]);
 
   async function startRecording() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    setVoiceError(null);
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : "";
+      setVoiceError(
+        name === "NotAllowedError"
+          ? "Mikrofon erişimi reddedildi. Tarayıcı ayarlarından Prova'ya mikrofon izni vermen gerekiyor."
+          : name === "NotFoundError"
+            ? "Mikrofon bulunamadı. Bir mikrofon bağlayıp tekrar dener misin?"
+            : "Mikrofona erişilemedi. Tekrar dener misin?"
+      );
+      return;
+    }
+
     const recorder = new MediaRecorder(stream);
     chunksRef.current = [];
     recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
@@ -102,13 +118,23 @@ export function InterviewClient({
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
       stream.getTracks().forEach((t) => t.stop());
       setIsLoading(true);
-      const formData = new FormData();
-      formData.append("audio", blob, "recording.webm");
-      const res = await fetch("/api/speech/transcribe", { method: "POST", body: formData });
-      const data = await res.json();
-      setIsLoading(false);
-      if (res.ok && data.text) {
-        sendMessage(data.text);
+      try {
+        const formData = new FormData();
+        formData.append("audio", blob, "recording.webm");
+        const res = await fetch("/api/speech/transcribe", { method: "POST", body: formData });
+        const data = await res.json();
+        if (!res.ok) {
+          setVoiceError("Ses metne çevrilemedi. Tekrar dener misin?");
+        } else if (!data.text?.trim()) {
+          setVoiceError("Ses algılanamadı. Mikrofonuna yakın, net bir şekilde tekrar dener misin?");
+        } else {
+          setVoiceError(null);
+          sendMessage(data.text);
+        }
+      } catch {
+        setVoiceError("Ses gönderilirken bir sorun oluştu. Tekrar dener misin?");
+      } finally {
+        setIsLoading(false);
       }
     };
     recorder.start();
@@ -200,6 +226,10 @@ export function InterviewClient({
         >
           İpucu iste
         </button>
+      )}
+
+      {mode === "voice" && voiceError && (
+        <p className="text-sm text-error">{voiceError}</p>
       )}
 
       <div className="flex gap-2">
