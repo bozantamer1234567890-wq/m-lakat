@@ -4,17 +4,35 @@ export type CaseCategory =
   | "buyume"
   | "birlesme-satin-alma"
   | "fiyatlandirma"
-  | "operasyon";
+  | "operasyon"
+  | "pazar-buyuklugu"
+  | "is-modeli";
+
+export type CaseSkillTag =
+  | "structuring"
+  | "quantitative"
+  | "hypothesis"
+  | "communication"
+  | "business_judgment"
+  | "market_sizing";
+
+export type CasePlanTier = "free" | "pro" | "coach";
 
 export type CaseRow = {
   id: string;
   title: string;
+  subtitle: string | null;
   industry: string;
   difficulty: "easy" | "medium" | "hard";
   category: CaseCategory;
   estimated_minutes: number;
   summary: string;
   prompt: string;
+  skills: CaseSkillTag[];
+  tags: string[];
+  is_featured: boolean;
+  is_new: boolean;
+  min_plan: CasePlanTier;
   is_published: boolean;
   is_diagnostic: boolean;
   is_drill: boolean;

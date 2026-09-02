@@ -90,6 +90,16 @@ export function isCoachActive(profile: ProfilePlanFields | null | undefined) {
   return new Date(profile.current_period_end).getTime() > Date.now();
 }
 
+/** Bir case'in min_plan gereksinimini kullanıcının aktif planına göre kontrol eder (Case Library kilidi). */
+export function hasCasePlanAccess(
+  profile: ProfilePlanFields | null | undefined,
+  minPlan: "free" | "pro" | "coach"
+) {
+  if (minPlan === "free") return true;
+  if (minPlan === "pro") return isProActive(profile) || isCoachActive(profile);
+  return isCoachActive(profile);
+}
+
 type SubscriptionCheckoutFormInitializeRequest = {
   locale: string;
   conversationId: string;

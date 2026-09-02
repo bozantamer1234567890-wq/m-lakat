@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, LinkButton, Badge, Button } from "@/components/ui";
@@ -134,6 +135,8 @@ export default async function DashboardPage() {
       ? { key: recurringEntry[0], label: SKILL_LABELS[recurringEntry[0]], count: recurringEntry[1] }
       : null;
 
+  const planFilter = proActive ? ["free", "pro"] : ["free"];
+
   let recurringDrill: CaseRow | null = null;
   if (recurringMistake) {
     const { data: drill } = await supabase
@@ -141,6 +144,7 @@ export default async function DashboardPage() {
       .select("*")
       .eq("is_drill", true)
       .eq("category", categoryForSkill(recurringMistake.key))
+      .in("min_plan", planFilter)
       .maybeSingle();
     recurringDrill = drill;
   }
@@ -155,6 +159,7 @@ export default async function DashboardPage() {
       .select("*")
       .eq("is_published", true)
       .eq("category", targetCategory)
+      .in("min_plan", planFilter)
       .limit(10);
     todaysCase = (candidates ?? []).find((c) => !attemptedCaseIds.includes(c.id)) ?? candidates?.[0] ?? null;
   }
@@ -356,9 +361,9 @@ export default async function DashboardPage() {
           <Card>
             <p className="text-sm text-brand-600">
               Henüz bir mülakat yapmadın.{" "}
-              <a href="/cases" className="font-medium text-brand-700 underline">
+              <Link href="/cases" className="font-medium text-brand-700 underline">
                 İlk case&apos;ini seç
-              </a>
+              </Link>
               .
             </p>
           </Card>
